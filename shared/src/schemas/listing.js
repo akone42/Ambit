@@ -36,4 +36,5 @@ export const UpdateListingSchema = z.object({
   inventory_count: z.number().int().nonnegative().optional(),
   delivery_window_days: z.number().int().positive().optional(),
   status: z.enum(['active', 'paused']).optional(),
+  image_url: z.string().url().optional(),
 })

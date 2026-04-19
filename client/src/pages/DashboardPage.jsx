@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import api from '../lib/axios.js'
 import ListingCard from '../components/ListingCard.jsx'
+import ImageUploader from '../components/ImageUploader.jsx'
 
 // ─── StorefrontForm ──────────────────────────────────────────────────────────
 // Inline component — only used on this page, so no need for a separate file.
@@ -25,6 +26,7 @@ function StorefrontForm({ existing, onSave }) {
     display_name: existing?.display_name ?? '',
     slug: existing?.slug ?? '',
     bio: existing?.bio ?? '',
+    avatar_url: existing?.avatar_url ?? '',
   })
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -103,6 +105,12 @@ function StorefrontForm({ existing, onSave }) {
         />
       </div>
 
+      <ImageUploader
+        label="Shop avatar"
+        currentUrl={form.avatar_url || null}
+        onUpload={(url) => setForm((prev) => ({ ...prev, avatar_url: url }))}
+      />
+
       <button
         type="submit"
         disabled={saving}
@@ -126,6 +134,7 @@ function ListingForm({ existing, onSave, onCancel }) {
     category: existing?.category ?? '',
     inventory_count: existing?.inventory_count ?? '',
     delivery_window_days: existing?.delivery_window_days ?? '',
+    image_url: existing?.image_url ?? '',
   })
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -149,6 +158,7 @@ function ListingForm({ existing, onSave, onCancel }) {
       ...(form.type === 'product'
         ? { inventory_count: Number(form.inventory_count) }
         : { delivery_window_days: Number(form.delivery_window_days) }),
+      ...(form.image_url ? { image_url: form.image_url } : {}),
     }
 
     try {
@@ -276,6 +286,12 @@ function ListingForm({ existing, onSave, onCancel }) {
           />
         </div>
       </div>
+
+      <ImageUploader
+        label="Listing image"
+        currentUrl={form.image_url || null}
+        onUpload={(url) => setForm((prev) => ({ ...prev, image_url: url }))}
+      />
 
       <div className="flex gap-2">
         <button
