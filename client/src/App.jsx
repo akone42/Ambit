@@ -25,10 +25,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import StorefrontPage from './pages/StorefrontPage.jsx'
-
-function HomePage() {
-  return <div className="p-8 text-gray-700">Homepage — listings coming in Milestone 4</div>
-}
+import HomePage from './pages/HomePage.jsx'
 
 function NotFoundPage() {
   return <div className="p-8 text-gray-500">404 — Page not found</div>
