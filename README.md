@@ -52,7 +52,7 @@ Before running this project you need:
 
 ---
 
-## Getting started (for new team members)
+## Getting started 
 
 ### 1. Clone the repo
 
