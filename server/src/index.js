@@ -17,6 +17,7 @@ import { setCsrfCookie, verifyCsrf } from './middleware/csrf.js'
 import authRouter from './routes/auth.js'
 import storefrontsRouter from './routes/storefronts.js'
 import listingsRouter from './routes/listings.js'
+import uploadRouter from './routes/upload.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -63,6 +64,7 @@ app.use(verifyCsrf)
 app.use('/api/auth', authRouter)
 app.use('/api/storefronts', storefrontsRouter)
 app.use('/api/listings', listingsRouter)
+app.use('/api/upload', uploadRouter)
 
 // Health check — useful for confirming the server is running
 // and for deployment platforms that ping this endpoint.
