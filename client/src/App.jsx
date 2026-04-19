@@ -23,14 +23,11 @@ import Navbar from './components/Navbar.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
+import DashboardPage from './pages/DashboardPage.jsx'
+import StorefrontPage from './pages/StorefrontPage.jsx'
 
-// Placeholder pages — we'll build these in later milestones
 function HomePage() {
   return <div className="p-8 text-gray-700">Homepage — listings coming in Milestone 4</div>
-}
-
-function DashboardPage() {
-  return <div className="p-8 text-gray-700">Seller Dashboard — coming in Milestone 3</div>
 }
 
 function NotFoundPage() {
@@ -63,6 +60,8 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route path="/shop/:slug" element={<StorefrontPage />} />
 
             {/* Catches any URL that didn't match above */}
             <Route path="*" element={<NotFoundPage />} />

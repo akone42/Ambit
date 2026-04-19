@@ -15,6 +15,8 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import { setCsrfCookie, verifyCsrf } from './middleware/csrf.js'
 import authRouter from './routes/auth.js'
+import storefrontsRouter from './routes/storefronts.js'
+import listingsRouter from './routes/listings.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -59,6 +61,8 @@ app.use(verifyCsrf)
 // So router.post('/register') becomes POST /api/auth/register.
 // The /api prefix is what our Vite proxy forwards to Express.
 app.use('/api/auth', authRouter)
+app.use('/api/storefronts', storefrontsRouter)
+app.use('/api/listings', listingsRouter)
 
 // Health check — useful for confirming the server is running
 // and for deployment platforms that ping this endpoint.
