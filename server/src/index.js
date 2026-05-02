@@ -18,6 +18,8 @@ import authRouter from './routes/auth.js'
 import storefrontsRouter from './routes/storefronts.js'
 import listingsRouter from './routes/listings.js'
 import uploadRouter from './routes/upload.js'
+import cartRouter from './routes/cartRouter.js'
+import ordersRouter from './routes/ordersRouter.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -65,6 +67,8 @@ app.use('/api/auth', authRouter)
 app.use('/api/storefronts', storefrontsRouter)
 app.use('/api/listings', listingsRouter)
 app.use('/api/upload', uploadRouter)
+app.use('/api/cart', cartRouter)
+app.use('/api/orders', ordersRouter)
 
 // Health check — useful for confirming the server is running
 // and for deployment platforms that ping this endpoint.
