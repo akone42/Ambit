@@ -20,7 +20,9 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "prisma": "^6.19.3",
+    "tsx": "^4.21.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -28,5 +30,10 @@
       "prettier --write"
     ],
     "*.{json,md,css}": "prettier --write"
+  },
+  "dependencies": {
+    "@prisma/adapter-neon": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "dotenv": "^17.4.2"
   }
 }
