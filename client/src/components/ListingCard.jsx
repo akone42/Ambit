@@ -1,62 +1,104 @@
+import { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import BookingModal from './BookingModal'
 
 export default function ListingCard({ listing }) {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [showModal, setShowModal] = useState(false)
+
+  function handleBookClick() {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    setShowModal(true)
+  }
+
+  function handleBookingSuccess(order) {
+    setShowModal(false)
+    navigate(`/booking-confirmation/${order.id}`)
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-      {/* Image */}
-      {listing.image_url ? (
-        <img src={listing.image_url} alt={listing.title} className="w-full h-40 object-cover" />
-      ) : (
-        <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-          No image
-        </div>
+    <>
+      {showModal && (
+        <BookingModal
+          listing={listing}
+          onClose={() => setShowModal(false)}
+          onSuccess={handleBookingSuccess}
+        />
       )}
 
-      <div className="p-4 flex flex-col flex-1">
-        {/* Type badge */}
-        <span
-          className={`self-start text-xs font-medium px-2 py-0.5 rounded-full mb-2 ${
-            listing.type === 'service'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'bg-emerald-100 text-emerald-700'
-          }`}
-        >
-          {listing.type}
-        </span>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+        {/* Image */}
+        {listing.image_url ? (
+          <img src={listing.image_url} alt={listing.title} className="w-full h-40 object-cover" />
+        ) : (
+          <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+            No image
+          </div>
+        )}
 
-        <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1">{listing.title}</h3>
-
-        {listing.category && <p className="text-xs text-gray-400 mb-2">{listing.category}</p>}
-
-        <p className="text-gray-500 text-xs line-clamp-2 flex-1">{listing.description}</p>
-
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-indigo-600 font-bold text-sm">
-            ${Number(listing.price).toFixed(2)}
+        <div className="p-4 flex flex-col flex-1">
+          {/* Type badge */}
+          <span
+            className={`self-start text-xs font-medium px-2 py-0.5 rounded-full mb-2 ${
+              listing.type === 'service'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'bg-emerald-100 text-emerald-700'
+            }`}
+          >
+            {listing.type}
           </span>
 
-          {listing.type === 'product' && listing.inventory_count !== null && (
-            <span className="text-xs text-gray-400">{listing.inventory_count} in stock</span>
+          <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1">{listing.title}</h3>
+
+          {listing.category && <p className="text-xs text-gray-400 mb-2">{listing.category}</p>}
+
+          <p className="text-gray-500 text-xs line-clamp-2 flex-1">{listing.description}</p>
+
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-indigo-600 font-bold text-sm">
+              ${Number(listing.price).toFixed(2)}
+            </span>
+
+            {listing.type === 'product' && listing.inventory_count !== null && (
+              <span className="text-xs text-gray-400">{listing.inventory_count} in stock</span>
+            )}
+            {listing.type === 'service' && listing.delivery_window_days !== null && (
+              <span className="text-xs text-gray-400">
+                {listing.delivery_window_days}d delivery
+              </span>
+            )}
+          </div>
+
+          {listing.storefront_slug && (
+            <p className="text-xs text-gray-400 mt-2">
+              by{' '}
+              <Link
+                to={`/shop/${listing.storefront_slug}`}
+                className="text-indigo-500 hover:underline"
+              >
+                {listing.storefront_name}
+              </Link>
+            </p>
           )}
-          {listing.type === 'service' && listing.delivery_window_days !== null && (
-            <span className="text-xs text-gray-400">{listing.delivery_window_days}d delivery</span>
+
+          {/* Book button for services */}
+          {listing.type === 'service' && (
+            <button
+              onClick={handleBookClick}
+              className="mt-3 w-full bg-indigo-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Book
+            </button>
           )}
         </div>
-
-        {listing.storefront_slug && (
-          <p className="text-xs text-gray-400 mt-2">
-            by{' '}
-            <Link
-              to={`/shop/${listing.storefront_slug}`}
-              className="text-indigo-500 hover:underline"
-            >
-              {listing.storefront_name}
-            </Link>
-          </p>
-        )}
       </div>
-    </div>
+    </>
   )
 }
 

@@ -26,6 +26,7 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import StorefrontPage from './pages/StorefrontPage.jsx'
 import HomePage from './pages/HomePage.jsx'
+import BookingConfirmationPage from './pages/BookingConfirmationPage.jsx'
 
 function NotFoundPage() {
   return <div className="p-8 text-gray-500">404 — Page not found</div>
@@ -61,7 +62,7 @@ export default function App() {
             <Route path="/shop/:slug" element={<StorefrontPage />} />
 
             {/* Catches any URL that didn't match above */}
-            <Route path="*" element={<NotFoundPage />} />
+            <Route path="/booking-confirmation/:orderId" element={<BookingConfirmationPage />} />
           </Routes>
         </div>
       </AuthProvider>
