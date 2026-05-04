@@ -8,8 +8,6 @@ const __dirname = dirname(__filename)
 
 dotenv.config({ path: join(__dirname, '../../.env') })
 
-console.log('DATABASE_URL:', process.env.DATABASE_URL)
-
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
