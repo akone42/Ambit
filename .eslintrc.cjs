@@ -15,5 +15,16 @@ module.exports = {
       settings: { react: { version: 'detect' } },
       rules: { 'react/react-in-jsx-scope': 'off' },
     },
+    {
+      files: [
+        'server/src/**/__tests__/**/*.js',
+        'server/src/**/*.test.js',
+        'server/src/**/*.spec.js',
+      ],
+      env: {
+        jest: true,
+        node: true,
+      },
+    },
   ],
 }
