@@ -7,12 +7,11 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "migrate": "node src/db/migrate.js",
-    "seed": "node src/db/seed.js",
-    "test": "cross-env NODE_ENV=test DOTENV_CONFIG_PATH=.env.test node --experimental-vm-modules -r dotenv/config ../node_modules/jest/bin/jest.js --passWithNoTests --runInBand"
+    "seed": "node src/db/seed.js"
   },
   "dependencies": {
     "@ambit/shared": "*",
-    "bcrypt": "^6.0.0",
+    "bcrypt": "^5.1.1",
     "cloudinary": "^2.2.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -22,18 +21,12 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "pg": "^8.11.5",
-    "sequelize": "^6.37.8",
-    "uuid": "^14.0.0",
+    "sequelize": "^6.37.3",
+    "stripe": "^22.1.0",
+    "uuid": "^9.0.1",
     "vite": "8.0.8"
   },
   "devDependencies": {
-    "cross-env": "^10.1.0",
-    "jest": "^30.3.0",
-    "nodemon": "^3.1.0",
-    "supertest": "^7.2.2"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "transform": {}
+    "nodemon": "^3.1.0"
   }
 }

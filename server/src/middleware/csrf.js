@@ -50,7 +50,6 @@ export function setCsrfCookie(req, res, next) {
  */
 export function verifyCsrf(req, res, next) {
   const safeMethods = ['GET', 'HEAD', 'OPTIONS']
-  if (process.env.NODE_ENV === 'test') return next()
   if (safeMethods.includes(req.method)) return next()
 
   const cookieToken = req.cookies[CSRF_COOKIE]

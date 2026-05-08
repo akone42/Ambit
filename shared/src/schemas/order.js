@@ -1,11 +1,11 @@
 import { z } from 'zod'
 
-const ShippingAddressSchema = z.object({
-  street: z.string(),
-  city: z.string(),
-  state: z.string(),
-  zip: z.string(),
-  country: z.string(),
+export const ShippingAddressSchema = z.object({
+  street: z.string().min(1, 'Required'),
+  city: z.string().min(1, 'Required'),
+  state: z.string().min(1, 'Required'),
+  zip: z.string().min(1, 'Required'),
+  country: z.string().min(1, 'Required'),
 })
 
 export const OrderSchema = z.object({
