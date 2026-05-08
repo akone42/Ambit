@@ -27,17 +27,32 @@ router.post('/', authMiddleware, async (req, res) => {
 
   const { display_name, slug, bio, avatar_url } = result.data
 
+  // dedicated client so we can run multiple queries in a transaction. We want to make sure
+  // that if the INSERT into storefronts succeeds but the UPDATE to users fails, we roll back
+  const client = await pool.connect()
+
   try {
-    const { rows } = await pool.query(
+    await client.query('BEGIN')
+
+    // Insert the storefront record
+    const { rows } = await client.query(
       `INSERT INTO storefronts (owner_id, slug, display_name, bio, avatar_url)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *`,
       [req.user.id, slug, display_name, bio ?? null, avatar_url ?? null]
     )
+    const storefront = rows[0]
 
-    res.status(201).json({ storefront: rows[0] })
+    // Update the user's role to "seller", after the storefront is successfully created.
+    await client.query(`UPDATE users SET role = 'seller' WHERE id = $1`, [req.user.id])
+
+    await client.query('COMMIT')
+
+    res.status(201).json({ storefront })
   } catch (err) {
-    // 23505 = unique_violation — slug is already taken, or seller already has a storefront
+    // If anything failed, roll back both the INSERT and UPDATE
+    await client.query('ROLLBACK')
+
     if (err.code === '23505') {
       const field = err.constraint?.includes('slug') ? 'slug' : 'owner_id'
       const message =
@@ -47,16 +62,18 @@ router.post('/', authMiddleware, async (req, res) => {
     // eslint-disable-next-line no-console
     console.error('Create storefront error:', err)
     res.status(500).json({ error: 'Server error' })
+  } finally {
+    // Always release the connection back to the pool
+    client.release()
   }
 })
-
 // ---------------------------------------------------------------------------
 // GET /api/storefronts/my
 // ---------------------------------------------------------------------------
 // IMPORTANT: this route must be defined BEFORE /api/storefronts/:id
 // because Express matches routes top-to-bottom. If :id came first,
 // the word "my" would be captured as the id parameter.
-router.get('/my', requireRole('seller'), async (req, res) => {
+router.get('/my', authMiddleware, async (req, res) => {
   try {
     const { rows } = await pool.query(`SELECT * FROM storefronts WHERE owner_id = $1`, [
       req.user.id,
