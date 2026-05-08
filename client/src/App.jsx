@@ -63,6 +63,7 @@ export default function App() {
 
             {/* Catches any URL that didn't match above */}
             <Route path="/booking-confirmation/:orderId" element={<BookingConfirmationPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </div>
       </AuthProvider>

@@ -315,7 +315,7 @@ function ListingForm({ existing, onSave, onCancel }) {
 
 // ─── DashboardPage ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
 
   const [storefront, setStorefront] = useState(null)
   const [listings, setListings] = useState([])
@@ -348,9 +348,14 @@ export default function DashboardPage() {
       .catch(() => setLoadingListings(false))
   }, [storefront])
 
-  function handleStorefrontSaved(saved) {
+  async function handleStorefrontSaved(saved) {
     setStorefront(saved)
     setEditingStorefront(false)
+
+    // If the user just created a storefront, they might have been "upgraded" to seller role.
+    // Refresh their auth state to get the new role, so they can access the dashboard features
+    // without needing to log out and back in.
+    await refreshUser()
   }
 
   function handleListingSaved(saved) {
