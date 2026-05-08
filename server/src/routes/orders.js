@@ -129,9 +129,9 @@ router.post('/book', authMiddleware, async (req, res) => {
     const {
       rows: [order],
     } = await pool.query(
-      `INSERT INTO orders (buyer_id, order_type, total, requested_date)
-       VALUES ($1, 'service', $2, $3) RETURNING *`,
-      [req.user.id, listing.price, requested_date]
+      `INSERT INTO orders (buyer_id, order_type, total, requested_date, stripe_pi_id)
+       VALUES ($1, 'service', $2, $3, $4) RETURNING *`,
+      [req.user.id, listing.price, requested_date, stripe_pi_id ?? null]
     )
 
     await pool.query(
