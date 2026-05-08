@@ -17,10 +17,9 @@ const router = express.Router()
 // ---------------------------------------------------------------------------
 // POST /api/storefronts
 // ---------------------------------------------------------------------------
-// requireRole('seller') is an array: [authMiddleware, roleCheckFn]
 // Express runs each item in the array as a middleware in order before the handler.
 // So: check JWT → check role → run handler.
-router.post('/', requireRole('seller'), async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   const result = StorefrontSchema.safeParse(req.body)
   if (!result.success) {
     return res.status(400).json({ errors: result.error.flatten().fieldErrors })
