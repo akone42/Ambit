@@ -27,6 +27,7 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import StorefrontPage from './pages/StorefrontPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import BookingConfirmationPage from './pages/BookingConfirmationPage.jsx'
+import OrdersPage from './pages/OrdersPage.jsx'
 
 function NotFoundPage() {
   return <div className="p-8 text-gray-500">404 — Page not found</div>
@@ -55,6 +56,15 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <OrdersPage />
                 </ProtectedRoute>
               }
             />
