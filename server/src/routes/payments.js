@@ -2,8 +2,18 @@ import express from 'express'
 import Stripe from 'stripe'
 import { authMiddleware } from '../middleware/auth.js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const router = express.Router()
+
+// Lazy singleton — Stripe is only instantiated when the first request arrives,
+// not at module load time. This prevents test suites from failing when
+// STRIPE_SECRET_KEY is absent from the test environment.
+let _stripe = null
+function getStripe() {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+  }
+  return _stripe
+}
 
 // POST /api/payments/create-intent
 // Creates a Stripe PaymentIntent and returns the client_secret to the frontend.
@@ -17,7 +27,7 @@ router.post('/create-intent', authMiddleware, async (req, res) => {
   }
 
   try {
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripe().paymentIntents.create({
       amount: Math.round(amount),
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
