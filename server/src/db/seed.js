@@ -165,6 +165,7 @@ const LISTING_DEFINITIONS = [
     category: 'Home & Decor',
     inventory_count: 8,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/knit-blanket/400/300',
   },
   {
     storefront_slug: 'alice-handmade',
@@ -176,6 +177,7 @@ const LISTING_DEFINITIONS = [
     category: 'Accessories',
     inventory_count: 15,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/crochet-bag/400/300',
   },
   {
     storefront_slug: 'alice-handmade',
@@ -187,6 +189,7 @@ const LISTING_DEFINITIONS = [
     category: 'Lessons',
     inventory_count: null,
     delivery_window_days: 7,
+    image_url: 'https://picsum.photos/seed/crochet-lesson/400/300',
   },
   {
     storefront_slug: 'alice-handmade',
@@ -198,6 +201,7 @@ const LISTING_DEFINITIONS = [
     category: 'Custom Work',
     inventory_count: null,
     delivery_window_days: 21,
+    image_url: 'https://picsum.photos/seed/crochet-commission/400/300',
   },
 
   // Bob's Woodshop — products only
@@ -211,6 +215,7 @@ const LISTING_DEFINITIONS = [
     category: 'Kitchen',
     inventory_count: 12,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/cutting-board/400/300',
   },
   {
     storefront_slug: 'bobs-woodshop',
@@ -222,6 +227,7 @@ const LISTING_DEFINITIONS = [
     category: 'Home & Decor',
     inventory_count: 6,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/wood-shelf/400/300',
   },
   {
     storefront_slug: 'bobs-woodshop',
@@ -233,6 +239,7 @@ const LISTING_DEFINITIONS = [
     category: 'Gifts',
     inventory_count: 20,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/keepsake-box/400/300',
   },
   {
     storefront_slug: 'bobs-woodshop',
@@ -244,6 +251,7 @@ const LISTING_DEFINITIONS = [
     category: 'Custom Work',
     inventory_count: null,
     delivery_window_days: 5,
+    image_url: 'https://picsum.photos/seed/furniture-consult/400/300',
   },
 
   // Carla Studio — design services
@@ -257,6 +265,7 @@ const LISTING_DEFINITIONS = [
     category: 'Design',
     inventory_count: null,
     delivery_window_days: 7,
+    image_url: 'https://picsum.photos/seed/logo-design/400/300',
   },
   {
     storefront_slug: 'carla-studio',
@@ -268,6 +277,7 @@ const LISTING_DEFINITIONS = [
     category: 'Design',
     inventory_count: null,
     delivery_window_days: 14,
+    image_url: 'https://picsum.photos/seed/brand-kit/400/300',
   },
   {
     storefront_slug: 'carla-studio',
@@ -279,6 +289,7 @@ const LISTING_DEFINITIONS = [
     category: 'Design',
     inventory_count: null,
     delivery_window_days: 3,
+    image_url: 'https://picsum.photos/seed/social-templates/400/300',
   },
   {
     storefront_slug: 'carla-studio',
@@ -290,6 +301,7 @@ const LISTING_DEFINITIONS = [
     category: 'Templates',
     inventory_count: 999,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/business-card/400/300',
   },
 
   // Dani's Kitchen — baked goods + lessons
@@ -303,6 +315,7 @@ const LISTING_DEFINITIONS = [
     category: 'Food & Baking',
     inventory_count: 10,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/sugar-cookies/400/300',
   },
   {
     storefront_slug: 'danis-kitchen',
@@ -314,6 +327,7 @@ const LISTING_DEFINITIONS = [
     category: 'Food & Baking',
     inventory_count: 5,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/celebration-cake/400/300',
   },
   {
     storefront_slug: 'danis-kitchen',
@@ -325,6 +339,7 @@ const LISTING_DEFINITIONS = [
     category: 'Lessons',
     inventory_count: null,
     delivery_window_days: 7,
+    image_url: 'https://picsum.photos/seed/baking-lesson/400/300',
   },
   {
     storefront_slug: 'danis-kitchen',
@@ -336,6 +351,7 @@ const LISTING_DEFINITIONS = [
     category: 'Custom Work',
     inventory_count: null,
     delivery_window_days: 3,
+    image_url: 'https://picsum.photos/seed/cake-consult/400/300',
   },
 
   // Eve Tutors — tutoring services
@@ -349,6 +365,7 @@ const LISTING_DEFINITIONS = [
     category: 'Tutoring',
     inventory_count: null,
     delivery_window_days: 3,
+    image_url: 'https://picsum.photos/seed/sat-tutoring/400/300',
   },
   {
     storefront_slug: 'eve-tutors',
@@ -360,6 +377,7 @@ const LISTING_DEFINITIONS = [
     category: 'Tutoring',
     inventory_count: null,
     delivery_window_days: 14,
+    image_url: 'https://picsum.photos/seed/python-course/400/300',
   },
   {
     storefront_slug: 'eve-tutors',
@@ -371,6 +389,7 @@ const LISTING_DEFINITIONS = [
     category: 'Tutoring',
     inventory_count: null,
     delivery_window_days: 2,
+    image_url: 'https://picsum.photos/seed/algebra-tutor/400/300',
   },
   {
     storefront_slug: 'eve-tutors',
@@ -382,6 +401,7 @@ const LISTING_DEFINITIONS = [
     category: 'Study Materials',
     inventory_count: 999,
     delivery_window_days: null,
+    image_url: 'https://picsum.photos/seed/sat-workbook/400/300',
   },
 ]
 
@@ -642,8 +662,8 @@ async function seed() {
       const { rows } = await client.query(
         `INSERT INTO listings
            (storefront_id, type, title, description, price, category,
-            inventory_count, delivery_window_days, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')
+            inventory_count, delivery_window_days, image_url, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active')
          RETURNING *`,
         [
           storefront.id,
@@ -652,8 +672,9 @@ async function seed() {
           l.description,
           l.price,
           l.category,
-          l.inventory_count, // NULL for services
-          l.delivery_window_days, // NULL for products
+          l.inventory_count,
+          l.delivery_window_days,
+          l.image_url ?? null,
         ]
       )
       insertedListings.push(rows[0])
