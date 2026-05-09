@@ -49,6 +49,7 @@ export default function HomePage() {
   // when the user submits (presses Enter or clicks the button),
   // not on every single keystroke.
   const [inputValue, setInputValue] = useState('')
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Fetch listings whenever search or activeCategory changes.
   // The dependency array [search, activeCategory] means this effect
@@ -117,11 +118,39 @@ export default function HomePage() {
       </div>
 
       {/* ── Category filter pills ── */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      {/* Mobile: toggle button */}
+      <div className="sm:hidden mb-3">
+        <button
+          onClick={() => setFiltersOpen((o) => !o)}
+          className="flex items-center gap-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white hover:border-indigo-400 transition-colors w-full justify-between"
+        >
+          <span>
+            Filter by category
+            {activeCategory !== 'All' && (
+              <span className="ml-2 text-indigo-600">· {activeCategory}</span>
+            )}
+          </span>
+          <svg
+            className={`w-4 h-4 text-gray-400 transition-transform ${filtersOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Pills: always visible on sm+, toggled on mobile */}
+      <div className={`flex flex-wrap gap-2 mb-6 ${filtersOpen ? 'flex' : 'hidden'} sm:flex`}>
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
-            onClick={() => handleCategoryClick(cat)}
+            onClick={() => {
+              handleCategoryClick(cat)
+              setFiltersOpen(false)
+            }}
             className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
               activeCategory === cat
                 ? 'bg-indigo-600 text-white border-indigo-600'

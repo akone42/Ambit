@@ -19,6 +19,7 @@ import uploadRouter from './routes/upload.js'
 import cartRouter from './routes/cartRouter.js'
 import ordersRouter from './routes/ordersRouter.js'
 import bookingsRouter from './routes/bookingsRouter.js'
+import paymentsRouter from './routes/payments.js'
 
 const app = express()
 
@@ -42,6 +43,7 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/cart', cartRouter)
 app.use('/api/orders', ordersRouter)
 app.use('/api/bookings', bookingsRouter)
+app.use('/api/payments', paymentsRouter)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' })

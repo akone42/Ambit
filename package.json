@@ -37,8 +37,10 @@
     "*.{json,md,css}": "prettier --write"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "@prisma/adapter-neon": "^7.7.0",
     "@prisma/client": "^7.7.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "ws": "^8.18.0"
   }
 }

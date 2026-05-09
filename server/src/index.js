@@ -1,9 +1,3 @@
-/**
- * EXPRESS ENTRY POINT
- *
- * This file imports the configured Express app and starts the HTTP server.
- */
-
 import 'dotenv/config'
 import app from './app.js'
 
