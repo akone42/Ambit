@@ -122,8 +122,16 @@ function CheckoutForm() {
         })
       }
 
+      // Snapshot cart before clearing — confirmation page needs the item details
+      const confirmedItems = [...items]
       clearCart()
-      navigate('/', { state: { orderSuccess: true } })
+      navigate('/order-confirmation', {
+        state: {
+          items: confirmedItems,
+          shippingAddress: shippingData,
+          total: grandTotal,
+        },
+      })
     } catch (err) {
       if (err.response?.status === 409) {
         setConflicts(err.response.data.conflicts || [])
