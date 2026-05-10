@@ -1,12 +1,12 @@
 import express from 'express'
-import { requireRole, authMiddleware } from '../middleware/auth.js'
+import { authMiddleware } from '../middleware/auth.js'
 import { createProductOrder } from '../services/orderService.js'
 
 const router = express.Router()
 
 // POST /orders - Create an order from the user's cart with inventory validation
-router.post('/', authMiddleware, requireRole('customer'), async (req, res) => {
-  const { shippingAddress } = req.body
+router.post('/', authMiddleware, async (req, res) => {
+  const shippingAddress = req.body.shippingAddress || req.body.shipping_address
   if (!shippingAddress) return res.status(400).json({ error: 'shippingAddress required' })
 
   try {
