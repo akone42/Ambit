@@ -4,11 +4,11 @@ import { pool } from './pool.js'
 const sql = `
   CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-  CREATE TYPE user_role AS ENUM ('buyer', 'seller', 'admin');
-  CREATE TYPE listing_type AS ENUM ('service', 'product');
-  CREATE TYPE listing_status AS ENUM ('active', 'paused', 'deleted');
-  CREATE TYPE order_type AS ENUM ('product', 'service');
-  CREATE TYPE order_status AS ENUM ('pending', 'confirmed', 'shipped', 'fulfilled', 'cancelled');
+  DO $$ BEGIN CREATE TYPE user_role AS ENUM ('buyer', 'seller', 'admin'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE listing_type AS ENUM ('service', 'product'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE listing_status AS ENUM ('active', 'paused', 'deleted'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE order_type AS ENUM ('product', 'service'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE order_status AS ENUM ('pending', 'confirmed', 'shipped', 'fulfilled', 'cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
   CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
