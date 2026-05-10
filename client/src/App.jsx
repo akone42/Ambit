@@ -1,24 +1,7 @@
-/**
- * APP ROOT
- *
- * This is the top of the React component tree. Everything renders inside here.
- *
- * Structure:
- *   BrowserRouter     — gives all child components access to routing (URL reading/writing)
- *     AuthProvider    — gives all child components access to auth state
- *       Navbar        — shown on every page
- *       Routes        — renders whichever Route matches the current URL
- *
- * React Router works by matching the current browser URL to a <Route path="...">
- * and rendering its element. Only one Route renders at a time (the best match).
- *
- * <Routes> → looks at all <Route> children → finds the one that matches the URL
- * <Route path="/login"> → renders LoginPage when URL is /login
- * <Route path="*"> → the wildcard — matches anything not matched above (404)
- */
-
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { createContext, useContext } from 'react'
+import { useDarkMode } from './hooks/useDarkMode.js'
 import Navbar from './components/Navbar.jsx'
 import CartDrawer from './components/CartDrawer.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
@@ -33,61 +16,70 @@ import OrdersPage from './pages/OrdersPage.jsx'
 import ListingPage from './pages/ListingPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 
+export const ThemeContext = createContext({ dark: false, toggleDark: () => {} })
+export function useTheme() {
+  return useContext(ThemeContext)
+}
+
 function NotFoundPage() {
-  return <div className="p-8 text-gray-500">404 — Page not found</div>
+  return <div className="p-8 text-gray-500 dark:text-gray-400">404 — Page not found</div>
 }
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <CartDrawer />
+  const [dark, setDark] = useDarkMode()
 
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/shop/:slug" element={<StorefrontPage />} />
-            <Route path="/listings/:id" element={<ListingPage />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/booking-confirmation/:orderId" element={<BookingConfirmationPage />} />
-            <Route
-              path="/checkout"
-              element={
-                <ProtectedRoute>
-                  <CheckoutPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  <OrdersPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </div>
-      </AuthProvider>
-    </BrowserRouter>
+  return (
+    <ThemeContext.Provider value={{ dark, toggleDark: () => setDark((d) => !d) }}>
+      <BrowserRouter>
+        <AuthProvider>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+            <Navbar />
+            <CartDrawer />
+
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/shop/:slug" element={<StorefrontPage />} />
+              <Route path="/listings/:id" element={<ListingPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/booking-confirmation/:orderId" element={<BookingConfirmationPage />} />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <OrdersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </div>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeContext.Provider>
   )
 }
