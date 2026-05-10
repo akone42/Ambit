@@ -56,21 +56,23 @@ function createProductListingPayload(overrides = {}) {
     type: 'product',
     title: `Test Product Listing ${unique}`,
     description: 'Test product description',
-    price: 25.99,
+    price: 25,
     category: 'crafts',
     inventory_count: 10,
     ...overrides,
   }
 }
 
-async function createSellerStorefrontAndListing() {
+async function createSellerStorefrontAndListing(listingOverrides = {}) {
   const sellerAgent = request.agent(app)
 
   await registerSeller(sellerAgent)
 
   const storefrontRes = await sellerAgent.post('/api/storefronts').send(createStorefrontPayload())
 
-  const listingRes = await sellerAgent.post('/api/listings').send(createProductListingPayload())
+  const listingRes = await sellerAgent
+    .post('/api/listings')
+    .send(createProductListingPayload(listingOverrides))
 
   return {
     sellerAgent,
@@ -79,7 +81,17 @@ async function createSellerStorefrontAndListing() {
   }
 }
 
-describe('Cart routes', () => {
+function shippingAddress() {
+  return {
+    name: 'Test Buyer',
+    street: '123 Test Street',
+    city: 'Brooklyn',
+    state: 'NY',
+    zip: '11201',
+  }
+}
+
+describe('Order routes', () => {
   beforeEach(async () => {
     await pool.query(`
       DELETE FROM reviews
@@ -130,70 +142,16 @@ describe('Cart routes', () => {
     await pool.end()
   })
 
-  describe('GET /api/cart', () => {
+  describe('POST /api/orders', () => {
     test('returns 401 when not logged in', async () => {
-      const res = await request(app).get('/api/cart')
-
-      expect(res.status).toBe(401)
-    })
-
-    test('returns only the logged-in user cart items', async () => {
-      const { listing } = await createSellerStorefrontAndListing()
-
-      const firstUserAgent = request.agent(app)
-      const secondUserAgent = request.agent(app)
-
-      await registerUser(firstUserAgent)
-      await registerUser(secondUserAgent)
-
-      await firstUserAgent.post('/api/cart/items').send({
-        listingId: listing.id,
-        quantity: 2,
-      })
-
-      const firstUserCart = await firstUserAgent.get('/api/cart')
-      const secondUserCart = await secondUserAgent.get('/api/cart')
-
-      expect(firstUserCart.status).toBe(200)
-      expect(firstUserCart.body.items).toHaveLength(1)
-      expect(firstUserCart.body.items[0].listing_id).toBe(listing.id)
-      expect(firstUserCart.body.items[0].quantity).toBe(2)
-
-      expect(secondUserCart.status).toBe(200)
-      expect(secondUserCart.body.items).toHaveLength(0)
-    })
-  })
-
-  describe('POST /api/cart/items', () => {
-    test('returns 401 when not logged in', async () => {
-      const { listing } = await createSellerStorefrontAndListing()
-
-      const res = await request(app).post('/api/cart/items').send({
-        listingId: listing.id,
-        quantity: 1,
+      const res = await request(app).post('/api/orders').send({
+        shippingAddress: shippingAddress(),
       })
 
       expect(res.status).toBe(401)
     })
 
-    test('adds a product listing to the logged-in user cart', async () => {
-      const { listing } = await createSellerStorefrontAndListing()
-
-      const buyerAgent = request.agent(app)
-      await registerUser(buyerAgent)
-
-      const res = await buyerAgent.post('/api/cart/items').send({
-        listingId: listing.id,
-        quantity: 3,
-      })
-
-      expect(res.status).toBe(201)
-      expect(res.body).toHaveProperty('item')
-      expect(res.body.item.listing_id).toBe(listing.id)
-      expect(res.body.item.quantity).toBe(3)
-    })
-
-    test('adds quantity when the same item is added again', async () => {
+    test('creates an order from the logged-in user cart', async () => {
       const { listing } = await createSellerStorefrontAndListing()
 
       const buyerAgent = request.agent(app)
@@ -204,29 +162,18 @@ describe('Cart routes', () => {
         quantity: 2,
       })
 
-      const res = await buyerAgent.post('/api/cart/items').send({
-        listingId: listing.id,
-        quantity: 3,
+      const res = await buyerAgent.post('/api/orders').send({
+        shippingAddress: shippingAddress(),
       })
 
       expect(res.status).toBe(201)
-      expect(res.body.item.quantity).toBe(5)
+      expect(res.body).toHaveProperty('order')
+      expect(res.body.order.order_type).toBe('product')
+      expect(Number(res.body.order.total)).toBe(50)
+      expect(res.body.order.status).toBe('pending')
     })
 
-    test('rejects missing listingId', async () => {
-      const buyerAgent = request.agent(app)
-      await registerUser(buyerAgent)
-
-      const res = await buyerAgent.post('/api/cart/items').send({
-        quantity: 1,
-      })
-
-      expect(res.status).toBe(400)
-    })
-  })
-
-  describe('PUT /api/cart/items/:listingId', () => {
-    test('updates the quantity of a cart item', async () => {
+    test('clears the cart after creating an order', async () => {
       const { listing } = await createSellerStorefrontAndListing()
 
       const buyerAgent = request.agent(app)
@@ -237,59 +184,118 @@ describe('Cart routes', () => {
         quantity: 1,
       })
 
-      const res = await buyerAgent.put(`/api/cart/items/${listing.id}`).send({
-        quantity: 4,
+      await buyerAgent.post('/api/orders').send({
+        shippingAddress: shippingAddress(),
       })
 
-      expect(res.status).toBe(200)
-      expect(res.body.item.listing_id).toBe(listing.id)
-      expect(res.body.item.quantity).toBe(4)
+      const cartRes = await buyerAgent.get('/api/cart')
+
+      expect(cartRes.status).toBe(200)
+      expect(cartRes.body.items).toHaveLength(0)
     })
 
-    test('rejects invalid quantity', async () => {
-      const { listing } = await createSellerStorefrontAndListing()
+    test('decreases product inventory after order is created', async () => {
+      const { listing } = await createSellerStorefrontAndListing({
+        inventory_count: 10,
+      })
 
       const buyerAgent = request.agent(app)
       await registerUser(buyerAgent)
 
-      const res = await buyerAgent.put(`/api/cart/items/${listing.id}`).send({
-        quantity: 0,
+      await buyerAgent.post('/api/cart/items').send({
+        listingId: listing.id,
+        quantity: 3,
+      })
+
+      await buyerAgent.post('/api/orders').send({
+        shippingAddress: shippingAddress(),
+      })
+
+      const listingRes = await request(app).get(`/api/listings/${listing.id}`)
+
+      expect(listingRes.status).toBe(200)
+      expect(listingRes.body.listing.inventory_count).toBe(7)
+    })
+
+    test('returns 400 when cart is empty', async () => {
+      const buyerAgent = request.agent(app)
+      await registerUser(buyerAgent)
+
+      const res = await buyerAgent.post('/api/orders').send({
+        shippingAddress: shippingAddress(),
       })
 
       expect(res.status).toBe(400)
+      expect(res.body).toHaveProperty('error')
+    })
+
+    test('returns 400 when shipping address is missing', async () => {
+      const buyerAgent = request.agent(app)
+      await registerUser(buyerAgent)
+
+      const res = await buyerAgent.post('/api/orders').send({})
+
+      expect(res.status).toBe(400)
+      expect(res.body).toHaveProperty('error')
+    })
+
+    test('returns 400 when cart quantity exceeds inventory', async () => {
+      const { listing } = await createSellerStorefrontAndListing({
+        inventory_count: 1,
+      })
+
+      const buyerAgent = request.agent(app)
+      await registerUser(buyerAgent)
+
+      await buyerAgent.post('/api/cart/items').send({
+        listingId: listing.id,
+        quantity: 3,
+      })
+
+      const res = await buyerAgent.post('/api/orders').send({
+        shippingAddress: shippingAddress(),
+      })
+
+      expect(res.status).toBe(400)
+      expect(res.body).toHaveProperty('error')
     })
   })
 
-  describe('DELETE /api/cart/items/:listingId', () => {
-    test('removes only the logged-in user cart item', async () => {
+  describe('GET /api/orders/my', () => {
+    test('returns 401 when not logged in', async () => {
+      const res = await request(app).get('/api/orders/my')
+
+      expect(res.status).toBe(401)
+    })
+
+    test('returns only the logged-in user orders', async () => {
       const { listing } = await createSellerStorefrontAndListing()
 
-      const firstUserAgent = request.agent(app)
-      const secondUserAgent = request.agent(app)
+      const firstBuyerAgent = request.agent(app)
+      const secondBuyerAgent = request.agent(app)
 
-      await registerUser(firstUserAgent)
-      await registerUser(secondUserAgent)
+      await registerUser(firstBuyerAgent)
+      await registerUser(secondBuyerAgent)
 
-      await firstUserAgent.post('/api/cart/items').send({
+      await firstBuyerAgent.post('/api/cart/items').send({
         listingId: listing.id,
         quantity: 1,
       })
 
-      await secondUserAgent.post('/api/cart/items').send({
-        listingId: listing.id,
-        quantity: 1,
+      await firstBuyerAgent.post('/api/orders').send({
+        shippingAddress: shippingAddress(),
       })
 
-      const deleteRes = await firstUserAgent.delete(`/api/cart/items/${listing.id}`)
+      const firstBuyerOrders = await firstBuyerAgent.get('/api/orders/my')
+      const secondBuyerOrders = await secondBuyerAgent.get('/api/orders/my')
 
-      expect(deleteRes.status).toBe(204)
+      expect(firstBuyerOrders.status).toBe(200)
+      expect(firstBuyerOrders.body.orders).toHaveLength(1)
+      expect(firstBuyerOrders.body.orders[0]).toHaveProperty('items')
+      expect(firstBuyerOrders.body.orders[0].items[0].listing_id).toBe(listing.id)
 
-      const firstUserCart = await firstUserAgent.get('/api/cart')
-      const secondUserCart = await secondUserAgent.get('/api/cart')
-
-      expect(firstUserCart.body.items).toHaveLength(0)
-      expect(secondUserCart.body.items).toHaveLength(1)
-      expect(secondUserCart.body.items[0].listing_id).toBe(listing.id)
+      expect(secondBuyerOrders.status).toBe(200)
+      expect(secondBuyerOrders.body.orders).toHaveLength(0)
     })
   })
 })
