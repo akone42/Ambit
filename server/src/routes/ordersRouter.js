@@ -1,6 +1,7 @@
 import express from 'express'
 import { authMiddleware } from '../middleware/auth.js'
 import { createProductOrder } from '../services/orderService.js'
+import { pool } from '../db/pool.js'
 
 const router = express.Router()
 
@@ -20,6 +21,23 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: err.message })
     }
     res.status(500).json({ error: 'Order creation failed' })
+  }
+})
+// Returns all orders placed by the currently logged-in buyer.
+// Used by the buyer's order history page.
+router.get('/my', authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM orders
+       WHERE buyer_id = $1
+       ORDER BY created_at DESC`,
+      [req.user.id]
+    )
+    res.json({ orders: rows })
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Get my orders error:', err)
+    res.status(500).json({ error: 'Server error' })
   }
 })
 

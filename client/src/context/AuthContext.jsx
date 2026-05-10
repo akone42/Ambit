@@ -83,9 +83,22 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  //refetch the user data from the server,
+  // useful after actions that might change the user's role or permissions,
+  // like creating a storefront
+  async function refreshUser() {
+    try {
+      const res = await api.get('/auth/me')
+      setUser(res.data.user)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to refresh user:', err)
+    }
+  }
+
   // The value object is what every useAuth() call receives.
   // We memo-ize nothing here for simplicity — this is fine for a class project.
-  const value = { user, loading, register, login, logout }
+  const value = { user, loading, register, login, logout, refreshUser }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
