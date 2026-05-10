@@ -53,6 +53,13 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' })
 })
 
+// Returns the CSRF token in the response body so that cross-origin frontends
+// (e.g. Vercel) can read it. The setCsrfCookie middleware runs first and
+// guarantees req.cookies.csrf_token is always set by the time we get here.
+app.get('/api/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.cookies.csrf_token })
+})
+
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   // eslint-disable-next-line no-console

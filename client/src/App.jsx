@@ -17,8 +17,10 @@
  * <Route path="*"> → the wildcard — matches anything not matched above (404)
  */
 
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { fetchCsrfToken } from './lib/axios.js'
 import Navbar from './components/Navbar.jsx'
 import CartDrawer from './components/CartDrawer.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
@@ -38,6 +40,19 @@ function NotFoundPage() {
 }
 
 export default function App() {
+  // Fetch the CSRF token once on startup and store it in memory.
+  // In cross-origin deployments (Vercel frontend + Render backend) the token
+  // cookie is set on the API domain, so document.cookie can't read it.
+  // We fetch it explicitly and the axios interceptor attaches it to every
+  // mutating request automatically.
+  useEffect(() => {
+    fetchCsrfToken().catch(() => {
+      // Non-fatal — user can still browse; mutations will show CSRF errors
+      // eslint-disable-next-line no-console
+      console.warn('Could not fetch CSRF token')
+    })
+  }, [])
+
   return (
     <BrowserRouter>
       <AuthProvider>

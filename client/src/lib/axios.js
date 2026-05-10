@@ -30,30 +30,37 @@ const api = axios.create({
 })
 
 // ---------------------------------------------------------------------------
+// CSRF TOKEN — stored in memory
+// ---------------------------------------------------------------------------
+// In production the frontend (Vercel) and backend (Render) are on different
+// domains. Browsers scope cookies to the domain that set them, so
+// document.cookie on ambit-client.vercel.app cannot see cookies set by
+// ambit-karx.onrender.com. Instead we fetch the token from a dedicated
+// endpoint and keep it in a module-level variable.
+let _csrfToken = null
+
+/**
+ * fetchCsrfToken
+ *
+ * Calls GET /csrf-token, which triggers setCsrfCookie on the server and
+ * returns the token value in the response body.
+ * Call this once on app startup (see App.jsx useEffect).
+ */
+export async function fetchCsrfToken() {
+  const res = await api.get('/csrf-token')
+  _csrfToken = res.data.csrfToken
+}
+
+// ---------------------------------------------------------------------------
 // REQUEST INTERCEPTOR — attach CSRF token
 // ---------------------------------------------------------------------------
 // An interceptor is a function that runs automatically before every request.
-// This one reads the csrf_token cookie (set by the server, readable by JS)
-// and adds it as the X-CSRF-Token header.
-//
-// Why do we need to do this manually?
-// The browser sends cookies automatically, but custom headers must be set
-// explicitly. The server's verifyCsrf middleware checks for this header,
-// so without it every POST/PUT/DELETE would return 403.
+// It attaches the in-memory CSRF token as the X-CSRF-Token header so the
+// server's verifyCsrf middleware accepts POST/PUT/DELETE requests.
 api.interceptors.request.use((config) => {
-  // Read the csrf_token cookie.
-  // document.cookie is a single string of all cookies:
-  //   "csrf_token=abc123; other_cookie=xyz"
-  // We split by '; ', find the right one, then split by '=' to get the value.
-  const csrfToken = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('csrf_token='))
-    ?.split('=')[1]
-
-  if (csrfToken) {
-    config.headers['x-csrf-token'] = csrfToken
+  if (_csrfToken) {
+    config.headers['x-csrf-token'] = _csrfToken
   }
-
   return config
 })
 
