@@ -44,6 +44,10 @@ export default function Navbar() {
               Hello, <span className="font-medium">{user.username}</span>
             </span>
 
+            <Link to="/orders" className="text-sm text-gray-600 hover:text-gray-900 font-medium">
+              Orders
+            </Link>
+
             {user.role === 'seller' && (
               <Link
                 to="/dashboard"
