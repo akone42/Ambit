@@ -35,18 +35,26 @@ const JWT_EXPIRES = '7d' // token expires after 7 days of inactivity
 //   sameSite: Strict  → browser will NOT send this cookie on cross-site requests
 //                       (major CSRF protection even before our CSRF token check)
 //   maxAge            → cookie lifetime in milliseconds (7 days)
+// setJwtCookie sets the token as an httpOnly cookie AND returns the raw token
+// string so the caller can include it in the response body.
+//
+// Why return the raw token?
+// In cross-origin deployments (Vercel → Render) browsers increasingly refuse
+// to store third-party cookies even with SameSite=None; Secure. The frontend
+// stores the raw token in localStorage and sends it as an Authorization header
+// instead. The cookie is still set for same-origin/dev environments.
 function setJwtCookie(res, payload) {
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRES })
 
   res.cookie('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    // In production the client (Vercel) and server (Render) are on different
-    // domains, so we need SameSite=None to allow cross-origin cookies.
-    // SameSite=None requires Secure=true (HTTPS only).
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   })
+
+  // Return raw token so the client can use it as a Bearer token
+  return token
 }
 
 // ---------------------------------------------------------------------------
@@ -99,13 +107,13 @@ router.post('/register', async (req, res) => {
 
     const user = rows[0]
 
-    // Step 4: Sign a JWT and set it as an httpOnly cookie.
-    // The payload only contains what we need in authMiddleware: id and role.
-    // We don't put email/username in the JWT — they can change, the DB is authoritative.
-    setJwtCookie(res, { id: user.id, role: user.role })
+    // Step 4: Sign a JWT, set it as an httpOnly cookie, and get back the raw
+    // token string so we can also return it in the response body.
+    const token = setJwtCookie(res, { id: user.id, role: user.role })
 
     // 201 Created — the standard HTTP status for successful resource creation
-    res.status(201).json({ user: safeUser(user) })
+    // token is included so the client can store it for Bearer auth in cross-origin setups
+    res.status(201).json({ user: safeUser(user), token })
   } catch (err) {
     // PostgreSQL error code 23505 = unique_violation
     // This happens when email or username is already taken.
@@ -150,9 +158,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
 
-    setJwtCookie(res, { id: user.id, role: user.role })
+    const token = setJwtCookie(res, { id: user.id, role: user.role })
 
-    res.json({ user: safeUser(user) })
+    res.json({ user: safeUser(user), token })
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Login error:', err)
