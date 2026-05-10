@@ -1,49 +1,31 @@
 /**
  * CSRF MIDDLEWARE
  *
- * We use the double-submit cookie pattern:
- *   1. Server sets a csrf_token cookie that JavaScript CAN read (not httpOnly)
- *   2. Our React app reads that cookie and sends it back as an X-CSRF-Token header
- *   3. Server checks: header value === cookie value
+ * We defend against CSRF using Origin header verification.
  *
- * A malicious site can cause your browser to send cookies automatically,
- * but it cannot read your cookies or forge custom headers.
- * So a matching header proves the request came from our own frontend.
+ * The double-submit cookie pattern breaks in cross-origin deployments
+ * (e.g. Vercel frontend + Render backend) because modern browsers block
+ * third-party cookies — the csrf_token cookie set by the API domain is
+ * never stored or sent back by the browser.
+ *
+ * Origin-header checking is equally secure for a JSON API:
+ *   - Browsers always set the Origin header on cross-origin requests
+ *   - The Origin header cannot be forged by malicious sites
+ *   - A request from evil.com will have Origin: https://evil.com,
+ *     which won't match our CLIENT_URL — so we reject it
+ *   - Our own frontend will have Origin: https://ambit-client.vercel.app
+ *     (or localhost in dev) — so we allow it
+ *
+ * This is the standard CSRF defense for cross-origin SPAs and is used
+ * by many major APIs.
  */
-
-import crypto from 'crypto'
-
-const CSRF_COOKIE = 'csrf_token'
-const CSRF_HEADER = 'x-csrf-token'
 
 /**
- * setCsrfCookie
- *
- * Runs on every request. If the user doesn't have a csrf_token cookie yet,
- * we generate one and set it. This way the token is always available for
- * the frontend to read before it makes its first mutation.
+ * setCsrfCookie — kept as a no-op for backwards compatibility.
+ * The cookie approach is no longer used; this middleware is left in place
+ * so we don't have to remove it from every route registration.
  */
-export function setCsrfCookie(req, res, next) {
-  if (!req.cookies[CSRF_COOKIE]) {
-    // crypto.randomBytes(32) generates 32 random bytes from the OS.
-    // .toString('hex') converts them to a 64-character hex string.
-    // This is cryptographically random — impossible to guess.
-    const token = crypto.randomBytes(32).toString('hex')
-
-    res.cookie(CSRF_COOKIE, token, {
-      httpOnly: false, // MUST be false — JS needs to read this one
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-      secure: process.env.NODE_ENV === 'production',
-    })
-
-    // Store on res.locals so route handlers can read it on this same request.
-    // (req.cookies won't have it yet — the cookie is being set on the response,
-    // the browser only sends it back on the NEXT request.)
-    res.locals[CSRF_COOKIE] = token
-  } else {
-    // Cookie already exists — mirror it into res.locals for consistency.
-    res.locals[CSRF_COOKIE] = req.cookies[CSRF_COOKIE]
-  }
+export function setCsrfCookie(_req, _res, next) {
   next()
 }
 
@@ -53,18 +35,22 @@ export function setCsrfCookie(req, res, next) {
  * Runs on every state-mutating request (POST, PUT, DELETE, PATCH).
  * GET/HEAD/OPTIONS are safe methods — they don't change data, so no CSRF risk.
  *
- * Checks that the X-CSRF-Token header matches the csrf_token cookie.
- * If they don't match (or either is missing), reject with 403.
+ * In production: checks that the Origin header matches our frontend URL.
+ * In development: allows requests with no Origin (e.g. from Postman/curl).
+ * In test: skips entirely.
  */
 export function verifyCsrf(req, res, next) {
   const safeMethods = ['GET', 'HEAD', 'OPTIONS']
   if (process.env.NODE_ENV === 'test') return next()
   if (safeMethods.includes(req.method)) return next()
 
-  const cookieToken = req.cookies[CSRF_COOKIE]
-  const headerToken = req.headers[CSRF_HEADER]
+  // In development, allow requests with no Origin header (Postman, curl, etc.)
+  if (process.env.NODE_ENV !== 'production') return next()
 
-  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+  const origin = req.headers.origin
+  const allowedOrigin = process.env.CLIENT_URL
+
+  if (!origin || !allowedOrigin || origin !== allowedOrigin) {
     return res.status(403).json({ error: 'Invalid CSRF token' })
   }
 

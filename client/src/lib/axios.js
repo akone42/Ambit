@@ -30,38 +30,10 @@ const api = axios.create({
 })
 
 // ---------------------------------------------------------------------------
-// CSRF TOKEN — stored in memory
+// No CSRF token header needed.
 // ---------------------------------------------------------------------------
-// In production the frontend (Vercel) and backend (Render) are on different
-// domains. Browsers scope cookies to the domain that set them, so
-// document.cookie on ambit-client.vercel.app cannot see cookies set by
-// ambit-karx.onrender.com. Instead we fetch the token from a dedicated
-// endpoint and keep it in a module-level variable.
-let _csrfToken = null
-
-/**
- * fetchCsrfToken
- *
- * Calls GET /csrf-token, which triggers setCsrfCookie on the server and
- * returns the token value in the response body.
- * Call this once on app startup (see App.jsx useEffect).
- */
-export async function fetchCsrfToken() {
-  const res = await api.get('/csrf-token')
-  _csrfToken = res.data.csrfToken
-}
-
-// ---------------------------------------------------------------------------
-// REQUEST INTERCEPTOR — attach CSRF token
-// ---------------------------------------------------------------------------
-// An interceptor is a function that runs automatically before every request.
-// It attaches the in-memory CSRF token as the X-CSRF-Token header so the
-// server's verifyCsrf middleware accepts POST/PUT/DELETE requests.
-api.interceptors.request.use((config) => {
-  if (_csrfToken) {
-    config.headers['x-csrf-token'] = _csrfToken
-  }
-  return config
-})
+// The server now uses Origin-header verification instead of the cookie
+// double-submit pattern. The browser sets the Origin header automatically
+// on every cross-origin request, so no client-side work is required.
 
 export default api
