@@ -20,6 +20,7 @@
 import PropTypes from 'prop-types'
 import { createContext, useContext, useEffect, useState } from 'react'
 import api from '../lib/axios.js'
+import useCartStore from '../store/cartStore.js'
 
 // createContext() creates the context object.
 // The argument (null) is the default value — only used if a component
@@ -81,6 +82,7 @@ export function AuthProvider({ children }) {
   async function logout() {
     await api.post('/auth/logout')
     setUser(null)
+    useCartStore.getState().clearCart()
   }
 
   //refetch the user data from the server,
