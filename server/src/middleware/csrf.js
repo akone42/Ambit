@@ -35,6 +35,14 @@ export function setCsrfCookie(req, res, next) {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       secure: process.env.NODE_ENV === 'production',
     })
+
+    // Store on res.locals so route handlers can read it on this same request.
+    // (req.cookies won't have it yet — the cookie is being set on the response,
+    // the browser only sends it back on the NEXT request.)
+    res.locals[CSRF_COOKIE] = token
+  } else {
+    // Cookie already exists — mirror it into res.locals for consistency.
+    res.locals[CSRF_COOKIE] = req.cookies[CSRF_COOKIE]
   }
   next()
 }
