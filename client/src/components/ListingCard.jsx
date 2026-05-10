@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import useCartStore from '../store/cartStore.js'
 import ServiceBookingModal from './ServiceBookingModal.jsx'
+import StarRating from './StarRating.jsx'
 
 export default function ListingCard({ listing }) {
   const [showBookingModal, setShowBookingModal] = useState(false)
@@ -58,6 +59,14 @@ export default function ListingCard({ listing }) {
           {listing.category && <p className="text-xs text-gray-400 mb-2">{listing.category}</p>}
 
           <p className="text-gray-500 text-xs line-clamp-2 flex-1">{listing.description}</p>
+
+          {/* Star rating */}
+          {listing.review_count > 0 && (
+            <div className="flex items-center gap-1 mt-1">
+              <StarRating value={Number(listing.avg_rating)} />
+              <span className="text-xs text-gray-400">({listing.review_count})</span>
+            </div>
+          )}
 
           <div className="mt-3 flex items-center justify-between">
             <span className="text-indigo-600 font-bold text-sm">
@@ -142,5 +151,7 @@ ListingCard.propTypes = {
     delivery_window_days: PropTypes.number,
     storefront_name: PropTypes.string,
     storefront_slug: PropTypes.string,
+    avg_rating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    review_count: PropTypes.number,
   }).isRequired,
 }
