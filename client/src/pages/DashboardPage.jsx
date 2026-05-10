@@ -415,13 +415,21 @@ export default function DashboardPage() {
 
         {/* Has a storefront, not editing → show details */}
         {storefront && !editingStorefront && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <p className="font-semibold text-gray-900">{storefront.display_name}</p>
-            <p className="text-indigo-500 text-sm">/shop/{storefront.slug}</p>
-            {storefront.bio && <p className="text-gray-500 text-sm mt-2">{storefront.bio}</p>}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
+            {storefront.avatar_url && (
+              <img
+                src={storefront.avatar_url}
+                alt="Shop avatar"
+                className="w-16 h-16 rounded-full object-cover border border-gray-200"
+              />
+            )}
+            <div>
+              <p className="font-semibold text-gray-900">{storefront.display_name}</p>
+              <p className="text-indigo-500 text-sm">/shop/{storefront.slug}</p>
+              {storefront.bio && <p className="text-gray-500 text-sm mt-2">{storefront.bio}</p>}
+            </div>
           </div>
         )}
-
         {/* Editing storefront → show edit form */}
         {storefront && editingStorefront && (
           <StorefrontForm existing={storefront} onSave={handleStorefrontSaved} />
