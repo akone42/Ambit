@@ -49,7 +49,7 @@ export default function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute role="seller">
+                <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
               }

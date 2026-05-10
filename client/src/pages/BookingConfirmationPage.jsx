@@ -28,7 +28,7 @@ export default function BookingConfirmationPage() {
 
         <div className="flex flex-col gap-3">
           <Link
-            to="/dashboard"
+            to="/orders"
             className="w-full bg-indigo-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
             View My Bookings
