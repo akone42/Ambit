@@ -5,8 +5,7 @@
  * Accessible to: everyone (public)
  *
  * Shows a seller's public shop: their name, bio, and all their active listings.
- * The :slug in the URL is read with useParams() — React Router puts URL
- * parameters into that hook automatically.
+ * Click any listing card to go to the detail page with full info + reviews.
  */
 
 import { useEffect, useState } from 'react'
@@ -15,7 +14,6 @@ import api from '../lib/axios.js'
 import ListingCard from '../components/ListingCard.jsx'
 
 export default function StorefrontPage() {
-  // useParams() reads the :slug part from /shop/:slug in the URL
   const { slug } = useParams()
 
   const [storefront, setStorefront] = useState(null)

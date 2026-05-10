@@ -2,18 +2,77 @@
  * Order History page
  * Accessible to: any logged-in user (buyers and sellers)
  *
- * Shows the current user's full order history —
- * both product orders and service bookings in one list.
+ * Shows the current user's full order history.
+ * For confirmed/fulfilled orders, each item shows a "Leave a Review" form
+ * if the buyer hasn't already reviewed that listing.
  */
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import PropTypes from 'prop-types'
 import api from '../lib/axios.js'
+import StarRating from '../components/StarRating.jsx'
+
+// ── Inline review form shown per order item ──────────────────────────────────
+function ReviewForm({ listingId, listingTitle, onSubmitted }) {
+  const [rating, setRating] = useState(0)
+  const [body, setBody] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!rating) return setError('Please select a star rating.')
+    setSubmitting(true)
+    setError(null)
+    try {
+      await api.post('/reviews', { listing_id: listingId, rating, body })
+      onSubmitted()
+    } catch (err) {
+      setError(err.response?.data?.error ?? 'Could not submit review.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2">
+      <p className="text-xs font-medium text-gray-700">Review: {listingTitle}</p>
+      <div className="flex items-center gap-2">
+        <StarRating value={rating} interactive onChange={setRating} size="md" />
+        {rating > 0 && <span className="text-xs text-gray-400">{rating} / 5</span>}
+      </div>
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Share your experience (optional)"
+        rows={2}
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      <button
+        type="submit"
+        disabled={submitting}
+        className="bg-indigo-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+      >
+        {submitting ? 'Submitting…' : 'Submit review'}
+      </button>
+    </form>
+  )
+}
+
+ReviewForm.propTypes = {
+  listingId: PropTypes.string.isRequired,
+  listingTitle: PropTypes.string.isRequired,
+  onSubmitted: PropTypes.func.isRequired,
+}
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Track which items have just been reviewed this session
+  const [reviewed, setReviewed] = useState(new Set())
 
   useEffect(() => {
     api
@@ -29,8 +88,9 @@ export default function OrdersPage() {
   }, [])
 
   if (loading) return <div className="p-8 text-gray-400">Loading your orders…</div>
-
   if (error) return <div className="p-8 text-red-500">{error}</div>
+
+  const canReview = (order) => order.status === 'confirmed' || order.status === 'fulfilled'
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -48,7 +108,7 @@ export default function OrdersPage() {
           {orders.map((order) => (
             <div
               key={order.id}
-              className="bg-white border border-gray-200 rounded-xl p-5 space-y-2"
+              className="bg-white border border-gray-200 rounded-xl p-5 space-y-3"
             >
               {/* Order header */}
               <div className="flex items-center justify-between">
@@ -64,24 +124,53 @@ export default function OrdersPage() {
                 <span className="text-xs text-gray-400 capitalize">{order.status}</span>
               </div>
 
-              {/* Order details */}
               <p className="text-xs text-gray-400 font-mono">Order ID: {order.id}</p>
-
               <p className="text-sm font-semibold text-gray-900">
                 ${Number(order.total).toFixed(2)}
               </p>
 
-              {/* Service booking date */}
               {order.order_type === 'service' && order.requested_date && (
                 <p className="text-xs text-indigo-600">
-                  Requested date: {new Date(order.requested_date).toLocaleDateString()}
+                  Requested: {new Date(order.requested_date).toLocaleDateString()}
                 </p>
               )}
 
-              {/* Order date */}
               <p className="text-xs text-gray-400">
                 Placed: {new Date(order.created_at).toLocaleDateString()}
               </p>
+
+              {/* Order items + review forms */}
+              {order.items?.length > 0 && (
+                <div className="border-t border-gray-100 pt-3 space-y-3">
+                  {order.items.map((item) => {
+                    const alreadyReviewed = item.already_reviewed || reviewed.has(item.listing_id)
+                    return (
+                      <div key={item.listing_id}>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-700 font-medium">{item.listing_title}</p>
+                          <p className="text-xs text-gray-400">
+                            × {item.quantity} — ${Number(item.price_at_purchase).toFixed(2)}
+                          </p>
+                        </div>
+
+                        {canReview(order) && alreadyReviewed && (
+                          <p className="text-xs text-green-600 mt-1">✓ You reviewed this</p>
+                        )}
+
+                        {canReview(order) && !alreadyReviewed && (
+                          <ReviewForm
+                            listingId={item.listing_id}
+                            listingTitle={item.listing_title}
+                            onSubmitted={() =>
+                              setReviewed((prev) => new Set([...prev, item.listing_id]))
+                            }
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </div>

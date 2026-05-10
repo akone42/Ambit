@@ -112,10 +112,16 @@ router.get('/', async (req, res) => {
     // We JOIN storefronts so we can return the shop's display_name with each listing.
     // This lets the frontend show "Sold by Alice's Shop" without a second API call.
     const { rows } = await pool.query(
-      `SELECT l.*, s.display_name AS storefront_name, s.slug AS storefront_slug
+      `SELECT l.*,
+              s.display_name AS storefront_name,
+              s.slug AS storefront_slug,
+              ROUND(AVG(r.rating), 1) AS avg_rating,
+              COUNT(r.id)::int AS review_count
        FROM listings l
        JOIN storefronts s ON s.id = l.storefront_id
+       LEFT JOIN reviews r ON r.listing_id = l.id
        WHERE ${whereClause}
+       GROUP BY l.id, s.display_name, s.slug
        ORDER BY l.created_at DESC`,
       values
     )
@@ -135,10 +141,16 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT l.*, s.display_name AS storefront_name, s.slug AS storefront_slug
+      `SELECT l.*,
+              s.display_name AS storefront_name,
+              s.slug AS storefront_slug,
+              ROUND(AVG(r.rating), 1) AS avg_rating,
+              COUNT(r.id)::int AS review_count
        FROM listings l
        JOIN storefronts s ON s.id = l.storefront_id
-       WHERE l.id = $1 AND l.status != 'deleted'`,
+       LEFT JOIN reviews r ON r.listing_id = l.id
+       WHERE l.id = $1 AND l.status != 'deleted'
+       GROUP BY l.id, s.display_name, s.slug`,
       [req.params.id]
     )
 
