@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ambit-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server/src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
