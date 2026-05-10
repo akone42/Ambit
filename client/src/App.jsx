@@ -31,6 +31,7 @@ import BookingConfirmationPage from './pages/BookingConfirmationPage.jsx'
 import CheckoutPage from './pages/CheckoutPage.jsx'
 import OrdersPage from './pages/OrdersPage.jsx'
 import ListingPage from './pages/ListingPage.jsx'
+import AdminPage from './pages/AdminPage.jsx'
 
 function NotFoundPage() {
   return <div className="p-8 text-gray-500">404 — Page not found</div>
@@ -58,6 +59,14 @@ export default function App() {
             />
             <Route path="/shop/:slug" element={<StorefrontPage />} />
             <Route path="/listings/:id" element={<ListingPage />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/booking-confirmation/:orderId" element={<BookingConfirmationPage />} />
             <Route
               path="/checkout"
