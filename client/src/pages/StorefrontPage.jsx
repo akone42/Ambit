@@ -4,105 +4,14 @@
  * Route: /shop/:slug
  * Accessible to: everyone (public)
  *
- * Shows a seller's public shop: their name, bio, all their active listings,
- * and the reviews left for each listing.
+ * Shows a seller's public shop: their name, bio, and all their active listings.
+ * Click any listing card to go to the detail page with full info + reviews.
  */
 
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import PropTypes from 'prop-types'
 import api from '../lib/axios.js'
 import ListingCard from '../components/ListingCard.jsx'
-import StarRating from '../components/StarRating.jsx'
-
-// ── Reviews section shown under the listings grid ────────────────────────────
-function ReviewsSection({ listings }) {
-  const [reviewsByListing, setReviewsByListing] = useState({})
-  const [expanded, setExpanded] = useState(null)
-  const [loading, setLoading] = useState(false)
-
-  async function loadReviews(listingId) {
-    if (expanded === listingId) {
-      setExpanded(null)
-      return
-    }
-    setExpanded(listingId)
-    if (reviewsByListing[listingId]) return // already loaded
-
-    setLoading(true)
-    try {
-      const res = await api.get(`/reviews?listing_id=${listingId}`)
-      setReviewsByListing((prev) => ({ ...prev, [listingId]: res.data.reviews }))
-    } catch {
-      setReviewsByListing((prev) => ({ ...prev, [listingId]: [] }))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Only show listings that have at least one review
-  const reviewable = listings.filter((l) => l.review_count > 0)
-  if (!reviewable.length) return null
-
-  return (
-    <div className="mt-10">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Reviews</h2>
-      <div className="space-y-3">
-        {reviewable.map((listing) => (
-          <div
-            key={listing.id}
-            className="bg-white border border-gray-200 rounded-xl overflow-hidden"
-          >
-            {/* Listing row — click to expand reviews */}
-            <button
-              onClick={() => loadReviews(listing.id)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-800">{listing.title}</span>
-                <div className="flex items-center gap-1">
-                  <StarRating value={Number(listing.avg_rating)} />
-                  <span className="text-xs text-gray-400">
-                    {Number(listing.avg_rating).toFixed(1)} ({listing.review_count})
-                  </span>
-                </div>
-              </div>
-              <span className="text-xs text-gray-400">{expanded === listing.id ? '▲' : '▼'}</span>
-            </button>
-
-            {/* Expanded review list */}
-            {expanded === listing.id && (
-              <div className="border-t border-gray-100 px-4 py-3 space-y-3">
-                {loading && !reviewsByListing[listing.id] ? (
-                  <p className="text-xs text-gray-400">Loading reviews…</p>
-                ) : reviewsByListing[listing.id]?.length ? (
-                  reviewsByListing[listing.id].map((review) => (
-                    <div key={review.id} className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <StarRating value={review.rating} />
-                        <span className="text-xs font-medium text-gray-700">{review.username}</span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {review.body && <p className="text-xs text-gray-600">{review.body}</p>}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-400">No reviews yet.</p>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-ReviewsSection.propTypes = {
-  listings: PropTypes.arrayOf(PropTypes.object).isRequired,
-}
 
 export default function StorefrontPage() {
   const { slug } = useParams()
@@ -178,9 +87,6 @@ export default function StorefrontPage() {
           ))}
         </div>
       )}
-
-      {/* ── Reviews section ── */}
-      <ReviewsSection listings={listings} />
     </div>
   )
 }
