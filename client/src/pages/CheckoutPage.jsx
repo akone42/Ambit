@@ -320,7 +320,7 @@ function ServiceDateRow({ item, onDateChange }) {
         type="date"
         min={minStr}
         max={maxStr}
-        value={item.requestedDate || ''}
+        value={item.requestedDate ? item.requestedDate.split('T')[0] : ''}
         onChange={(e) => onDateChange(item.listing.id, e.target.value)}
         className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
