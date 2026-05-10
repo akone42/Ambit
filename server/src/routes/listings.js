@@ -26,8 +26,16 @@ router.post('/', requireRole('seller'), async (req, res) => {
     return res.status(400).json({ errors: result.error.flatten().fieldErrors })
   }
 
-  const { type, title, description, price, category, inventory_count, delivery_window_days } =
-    result.data
+  const {
+    type,
+    title,
+    description,
+    price,
+    category,
+    inventory_count,
+    delivery_window_days,
+    image_url,
+  } = result.data
 
   try {
     // Sellers can only create listings under their own storefront.
@@ -44,9 +52,9 @@ router.post('/', requireRole('seller'), async (req, res) => {
 
     const { rows } = await pool.query(
       `INSERT INTO listings
-         (storefront_id, type, title, description, price, category, inventory_count, delivery_window_days)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
+        (storefront_id, type, title, description, price, category, inventory_count, delivery_window_days, image_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *`,
       [
         storefrontId,
         type,
@@ -56,6 +64,7 @@ router.post('/', requireRole('seller'), async (req, res) => {
         category,
         inventory_count ?? null,
         delivery_window_days ?? null,
+        image_url ?? null,
       ]
     )
 
@@ -112,10 +121,16 @@ router.get('/', async (req, res) => {
     // We JOIN storefronts so we can return the shop's display_name with each listing.
     // This lets the frontend show "Sold by Alice's Shop" without a second API call.
     const { rows } = await pool.query(
-      `SELECT l.*, s.display_name AS storefront_name, s.slug AS storefront_slug
+      `SELECT l.*,
+              s.display_name AS storefront_name,
+              s.slug AS storefront_slug,
+              ROUND(AVG(r.rating), 1) AS avg_rating,
+              COUNT(r.id)::int AS review_count
        FROM listings l
        JOIN storefronts s ON s.id = l.storefront_id
+       LEFT JOIN reviews r ON r.listing_id = l.id
        WHERE ${whereClause}
+       GROUP BY l.id, s.display_name, s.slug
        ORDER BY l.created_at DESC`,
       values
     )
@@ -135,10 +150,16 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT l.*, s.display_name AS storefront_name, s.slug AS storefront_slug
+      `SELECT l.*,
+              s.display_name AS storefront_name,
+              s.slug AS storefront_slug,
+              ROUND(AVG(r.rating), 1) AS avg_rating,
+              COUNT(r.id)::int AS review_count
        FROM listings l
        JOIN storefronts s ON s.id = l.storefront_id
-       WHERE l.id = $1 AND l.status != 'deleted'`,
+       LEFT JOIN reviews r ON r.listing_id = l.id
+       WHERE l.id = $1 AND l.status != 'deleted'
+       GROUP BY l.id, s.display_name, s.slug`,
       [req.params.id]
     )
 
@@ -161,8 +182,16 @@ router.put('/:id', authMiddleware, async (req, res) => {
     return res.status(400).json({ errors: result.error.flatten().fieldErrors })
   }
 
-  const { title, description, price, category, inventory_count, delivery_window_days, status } =
-    result.data
+  const {
+    title,
+    description,
+    price,
+    category,
+    inventory_count,
+    delivery_window_days,
+    status,
+    image_url,
+  } = result.data
 
   try {
     // Verify the listing exists and belongs to this seller's storefront
@@ -179,15 +208,16 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
     const { rows } = await pool.query(
       `UPDATE listings
-       SET title                = COALESCE($1, title),
-           description          = COALESCE($2, description),
-           price                = COALESCE($3, price),
-           category             = COALESCE($4, category),
-           inventory_count      = COALESCE($5, inventory_count),
-           delivery_window_days = COALESCE($6, delivery_window_days),
-           status               = COALESCE($7, status)
-       WHERE id = $8
-       RETURNING *`,
+      SET title                = COALESCE($1, title),
+          description          = COALESCE($2, description),
+          price                = COALESCE($3, price),
+          category             = COALESCE($4, category),
+          inventory_count      = COALESCE($5, inventory_count),
+          delivery_window_days = COALESCE($6, delivery_window_days),
+          status               = COALESCE($7, status),
+          image_url            = COALESCE($8, image_url)
+      WHERE id = $9
+      RETURNING *`,
       [
         title ?? null,
         description ?? null,
@@ -196,6 +226,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
         inventory_count ?? null,
         delivery_window_days ?? null,
         status ?? null,
+        image_url ?? null,
         req.params.id,
       ]
     )

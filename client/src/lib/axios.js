@@ -16,10 +16,9 @@
 import axios from 'axios'
 
 const api = axios.create({
-  // baseURL: every request made with this instance prepends this.
-  // So api.get('/auth/me') becomes a request to /api/auth/me.
-  // Vite's proxy (vite.config.js) forwards /api/* to http://localhost:3001.
-  baseURL: '/api',
+  // In development: '/api' — Vite's proxy forwards to http://localhost:3001.
+  // In production: VITE_API_URL points directly to the Render server URL.
+  baseURL: import.meta.env.VITE_API_URL ?? '/api',
 
   // withCredentials: true tells the browser to include cookies
   // on every request, even during development when the frontend (port 5173)

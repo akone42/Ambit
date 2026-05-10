@@ -315,7 +315,7 @@ function ListingForm({ existing, onSave, onCancel }) {
 
 // ─── DashboardPage ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
 
   const [storefront, setStorefront] = useState(null)
   const [listings, setListings] = useState([])
@@ -348,9 +348,14 @@ export default function DashboardPage() {
       .catch(() => setLoadingListings(false))
   }, [storefront])
 
-  function handleStorefrontSaved(saved) {
+  async function handleStorefrontSaved(saved) {
     setStorefront(saved)
     setEditingStorefront(false)
+
+    // If the user just created a storefront, they might have been "upgraded" to seller role.
+    // Refresh their auth state to get the new role, so they can access the dashboard features
+    // without needing to log out and back in.
+    await refreshUser()
   }
 
   function handleListingSaved(saved) {
@@ -410,10 +415,19 @@ export default function DashboardPage() {
 
         {/* Has a storefront, not editing → show details */}
         {storefront && !editingStorefront && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <p className="font-semibold text-gray-900">{storefront.display_name}</p>
-            <p className="text-indigo-500 text-sm">/shop/{storefront.slug}</p>
-            {storefront.bio && <p className="text-gray-500 text-sm mt-2">{storefront.bio}</p>}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4">
+            {storefront.avatar_url && (
+              <img
+                src={storefront.avatar_url}
+                alt="Shop avatar"
+                className="w-16 h-16 rounded-full object-cover border border-gray-200"
+              />
+            )}
+            <div>
+              <p className="font-semibold text-gray-900">{storefront.display_name}</p>
+              <p className="text-indigo-500 text-sm">/shop/{storefront.slug}</p>
+              {storefront.bio && <p className="text-gray-500 text-sm mt-2">{storefront.bio}</p>}
+            </div>
           </div>
         )}
 
@@ -460,7 +474,7 @@ export default function DashboardPage() {
                     />
                   ) : (
                     <>
-                      <ListingCard listing={listing} />
+                      <ListingCard listing={listing} isOwner />
                       <div className="flex gap-2 mt-2">
                         <button
                           onClick={() => setEditingListing(listing)}

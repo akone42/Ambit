@@ -20,6 +20,7 @@
 import PropTypes from 'prop-types'
 import { createContext, useContext, useEffect, useState } from 'react'
 import api from '../lib/axios.js'
+import useCartStore from '../store/cartStore.js'
 
 // createContext() creates the context object.
 // The argument (null) is the default value — only used if a component
@@ -81,11 +82,25 @@ export function AuthProvider({ children }) {
   async function logout() {
     await api.post('/auth/logout')
     setUser(null)
+    useCartStore.getState().clearCart()
+  }
+
+  //refetch the user data from the server,
+  // useful after actions that might change the user's role or permissions,
+  // like creating a storefront
+  async function refreshUser() {
+    try {
+      const res = await api.get('/auth/me')
+      setUser(res.data.user)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to refresh user:', err)
+    }
   }
 
   // The value object is what every useAuth() call receives.
   // We memo-ize nothing here for simplicity — this is fine for a class project.
-  const value = { user, loading, register, login, logout }
+  const value = { user, loading, register, login, logout, refreshUser }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

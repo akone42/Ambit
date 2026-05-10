@@ -32,7 +32,7 @@ export function setCsrfCookie(req, res, next) {
 
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false, // MUST be false — JS needs to read this one
-      sameSite: 'Strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       secure: process.env.NODE_ENV === 'production',
     })
   }

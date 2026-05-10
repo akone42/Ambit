@@ -3,7 +3,7 @@ import { pool } from '../db/pool.js'
 // Order service function: createProductOrder
 
 /*createProductOrder: Creates an order from the user's cart.
- Validates inventory with row-level locks to prevent race conditions 
+ Validates inventory with row-level locks to prevent race conditions
   and returns detailed conflict info if inventory is insufficient.
   */
 export async function createProductOrder(userId, { shippingAddress }) {
@@ -14,9 +14,9 @@ export async function createProductOrder(userId, { shippingAddress }) {
 
     // Fetch cart items with a row-level lock to prevent race conditions
     const { rows: cartItems } = await client.query(
-      `SELECT 
+      `SELECT
          ci.listing_id, ci.quantity,
-         l.title, l.price, l.inventory_count
+         l.title, l.price, l.inventory_count, l.type
        FROM cart_items ci
        JOIN listings l ON l.id = ci.listing_id
        WHERE ci.user_id = $1
@@ -32,7 +32,7 @@ export async function createProductOrder(userId, { shippingAddress }) {
     // Check inventory for every item before committing anything
     const conflicts = []
     for (const item of cartItems) {
-      if (item.inventory_count < item.quantity) {
+      if (item.type === 'product' && item.inventory_count < item.quantity) {
         conflicts.push({
           listingId: item.listing_id,
           title: item.title,

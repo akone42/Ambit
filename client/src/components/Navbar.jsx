@@ -44,6 +44,10 @@ export default function Navbar() {
               Hello, <span className="font-medium">{user.username}</span>
             </span>
 
+            <Link to="/orders" className="text-sm text-gray-600 hover:text-gray-900 font-medium">
+              Orders
+            </Link>
+
             {user.role === 'seller' && (
               <Link
                 to="/dashboard"
@@ -53,6 +57,14 @@ export default function Navbar() {
               </Link>
             )}
 
+            {user.role === 'buyer' && (
+              <Link
+                to="/dashboard"
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                Become a Seller
+              </Link>
+            )}
             {user.role === 'admin' && (
               <Link to="/admin" className="text-sm text-red-600 hover:text-red-800 font-medium">
                 Admin

@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 import useCartStore from '../store/cartStore.js'
 import ServiceBookingModal from './ServiceBookingModal.jsx'
+import StarRating from './StarRating.jsx'
 
-export default function ListingCard({ listing }) {
+export default function ListingCard({ listing, isOwner = false }) {
+  const detailUrl = `/listings/${listing.id}`
   const [showBookingModal, setShowBookingModal] = useState(false)
   const { addItem, items } = useCartStore()
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const inCart = items.some((i) => i.listing.id === listing.id)
   const outOfStock = listing.type === 'product' && listing.inventory_count === 0
@@ -18,20 +24,30 @@ export default function ListingCard({ listing }) {
 
   function handleBook(e) {
     e.preventDefault()
+    if (!user) {
+      navigate(`/login?next=${encodeURIComponent(location.pathname)}`)
+      return
+    }
     setShowBookingModal(true)
   }
 
   return (
     <>
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-        {/* Image */}
-        {listing.image_url ? (
-          <img src={listing.image_url} alt={listing.title} className="w-full h-40 object-cover" />
-        ) : (
-          <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-            No image
-          </div>
-        )}
+        {/* Image — click to go to listing detail */}
+        <Link to={detailUrl}>
+          {listing.image_url ? (
+            <img
+              src={listing.image_url}
+              alt={listing.title}
+              className="w-full h-40 object-cover hover:opacity-90 transition-opacity"
+            />
+          ) : (
+            <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm hover:bg-gray-200 transition-colors">
+              No image
+            </div>
+          )}
+        </Link>
 
         <div className="p-4 flex flex-col flex-1">
           {/* Type badge */}
@@ -45,11 +61,23 @@ export default function ListingCard({ listing }) {
             {listing.type}
           </span>
 
-          <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1">{listing.title}</h3>
+          <Link to={detailUrl} className="hover:text-indigo-600 transition-colors">
+            <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-1">
+              {listing.title}
+            </h3>
+          </Link>
 
           {listing.category && <p className="text-xs text-gray-400 mb-2">{listing.category}</p>}
 
           <p className="text-gray-500 text-xs line-clamp-2 flex-1">{listing.description}</p>
+
+          {/* Star rating */}
+          {listing.review_count > 0 && (
+            <div className="flex items-center gap-1 mt-1">
+              <StarRating value={Number(listing.avg_rating)} />
+              <span className="text-xs text-gray-400">({listing.review_count})</span>
+            </div>
+          )}
 
           <div className="mt-3 flex items-center justify-between">
             <span className="text-indigo-600 font-bold text-sm">
@@ -84,8 +112,8 @@ export default function ListingCard({ listing }) {
             </p>
           )}
 
-          {/* CTA */}
-          {listing.type === 'product' ? (
+          {/* CTA — hidden on your own listings */}
+          {isOwner ? null : listing.type === 'product' ? (
             <button
               onClick={handleAddToCart}
               disabled={outOfStock}
@@ -122,6 +150,7 @@ export default function ListingCard({ listing }) {
 }
 
 ListingCard.propTypes = {
+  isOwner: PropTypes.bool,
   listing: PropTypes.shape({
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
@@ -134,5 +163,7 @@ ListingCard.propTypes = {
     delivery_window_days: PropTypes.number,
     storefront_name: PropTypes.string,
     storefront_slug: PropTypes.string,
+    avg_rating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    review_count: PropTypes.number,
   }).isRequired,
 }
