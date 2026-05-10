@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 import useCartStore from '../store/cartStore.js'
 import ServiceBookingModal from './ServiceBookingModal.jsx'
 
 export default function ListingCard({ listing }) {
   const [showBookingModal, setShowBookingModal] = useState(false)
   const { addItem, items } = useCartStore()
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const inCart = items.some((i) => i.listing.id === listing.id)
   const outOfStock = listing.type === 'product' && listing.inventory_count === 0
@@ -18,6 +22,10 @@ export default function ListingCard({ listing }) {
 
   function handleBook(e) {
     e.preventDefault()
+    if (!user) {
+      navigate(`/login?next=${encodeURIComponent(location.pathname)}`)
+      return
+    }
     setShowBookingModal(true)
   }
 

@@ -76,7 +76,7 @@ describe('Storefront routes', () => {
       expect(res.body.storefront.bio).toBe(payload.bio)
     })
 
-    test('returns 403 for logged-in buyer without seller role', async () => {
+    test('allows a logged-in buyer to create a storefront (becomes seller)', async () => {
       const agent = request.agent(app)
       await registerUser(agent)
 
@@ -84,7 +84,9 @@ describe('Storefront routes', () => {
 
       const res = await agent.post('/api/storefronts').send(payload)
 
-      expect(res.status).toBe(403)
+      expect(res.status).toBe(201)
+      expect(res.body).toHaveProperty('storefront')
+      expect(res.body.storefront.slug).toBe(payload.slug)
     })
 
     test('returns 401 when not logged in', async () => {
@@ -134,13 +136,15 @@ describe('Storefront routes', () => {
       expect(res.body.storefront.slug).toBe(payload.slug)
     })
 
-    test('returns 403 for buyer without seller role', async () => {
+    test('returns null storefront for buyer with no storefront yet', async () => {
       const agent = request.agent(app)
       await registerUser(agent)
 
       const res = await agent.get('/api/storefronts/my')
 
-      expect(res.status).toBe(403)
+      expect(res.status).toBe(200)
+      expect(res.body).toHaveProperty('storefront')
+      expect(res.body.storefront).toBeNull()
     })
   })
 
