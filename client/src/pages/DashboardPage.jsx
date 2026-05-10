@@ -204,8 +204,8 @@ function ListingForm({ existing, onSave, onCancel }) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="col-span-1 sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
           <input
             name="title"
@@ -274,7 +274,7 @@ function ListingForm({ existing, onSave, onCancel }) {
           </div>
         )}
 
-        <div className="col-span-2">
+        <div className="col-span-1 sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
             name="description"

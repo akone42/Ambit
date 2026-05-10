@@ -11,13 +11,16 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { LoginSchema } from '@ambit/shared'
 import { useAuth } from '../context/AuthContext.jsx'
+import useCartStore from '../store/cartStore.js'
 
 export default function LoginPage() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const mergeGuestCart = useCartStore((s) => s.mergeGuestCart)
 
   useEffect(() => {
     if (user) navigate('/', { replace: true })
@@ -33,10 +36,10 @@ export default function LoginPage() {
   async function onSubmit(data) {
     try {
       await login(data.email, data.password)
+      await mergeGuestCart()
+      const next = searchParams.get('next') || '/'
+      navigate(next, { replace: true })
     } catch (err) {
-      // 401 from the server — show a single error, not per-field.
-      // We deliberately don't say "email not found" vs "wrong password"
-      // (same reason the server doesn't: stops account enumeration)
       setError('root', {
         message: err.response?.data?.error || 'Login failed. Please try again.',
       })

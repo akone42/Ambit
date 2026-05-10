@@ -1,37 +1,28 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import BookingModal from './BookingModal'
+import { Link } from 'react-router-dom'
+import useCartStore from '../store/cartStore.js'
+import ServiceBookingModal from './ServiceBookingModal.jsx'
 
 export default function ListingCard({ listing }) {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const [showModal, setShowModal] = useState(false)
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const { addItem, items } = useCartStore()
 
-  function handleBookClick() {
-    if (!user) {
-      navigate('/login')
-      return
-    }
-    setShowModal(true)
+  const inCart = items.some((i) => i.listing.id === listing.id)
+  const outOfStock = listing.type === 'product' && listing.inventory_count === 0
+
+  function handleAddToCart(e) {
+    e.preventDefault()
+    addItem(listing)
   }
 
-  function handleBookingSuccess(order) {
-    setShowModal(false)
-    navigate(`/booking-confirmation/${order.id}`)
+  function handleBook(e) {
+    e.preventDefault()
+    setShowBookingModal(true)
   }
 
   return (
     <>
-      {showModal && (
-        <BookingModal
-          listing={listing}
-          onClose={() => setShowModal(false)}
-          onSuccess={handleBookingSuccess}
-        />
-      )}
-
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
         {/* Image */}
         {listing.image_url ? (
@@ -66,7 +57,13 @@ export default function ListingCard({ listing }) {
             </span>
 
             {listing.type === 'product' && listing.inventory_count !== null && (
-              <span className="text-xs text-gray-400">{listing.inventory_count} in stock</span>
+              <span
+                className={`text-xs ${listing.inventory_count === 0 ? 'text-red-400' : 'text-gray-400'}`}
+              >
+                {listing.inventory_count === 0
+                  ? 'Out of stock'
+                  : `${listing.inventory_count} in stock`}
+              </span>
             )}
             {listing.type === 'service' && listing.delivery_window_days !== null && (
               <span className="text-xs text-gray-400">
@@ -87,17 +84,39 @@ export default function ListingCard({ listing }) {
             </p>
           )}
 
-          {/* Book button for services */}
-          {listing.type === 'service' && (
+          {/* CTA */}
+          {listing.type === 'product' ? (
             <button
-              onClick={handleBookClick}
-              className="mt-3 w-full bg-indigo-600 text-white text-sm font-medium py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              onClick={handleAddToCart}
+              disabled={outOfStock}
+              className={`mt-3 w-full py-2 rounded-lg text-xs font-medium transition-colors ${
+                outOfStock
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : inCart
+                    ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+              }`}
             >
-              Book
+              {outOfStock ? 'Out of stock' : inCart ? 'Add more' : 'Add to cart'}
+            </button>
+          ) : (
+            <button
+              onClick={handleBook}
+              className={`mt-3 w-full py-2 rounded-lg text-xs font-medium transition-colors ${
+                inCart
+                  ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+              }`}
+            >
+              {inCart ? 'Change date' : 'Book'}
             </button>
           )}
         </div>
       </div>
+
+      {showBookingModal && (
+        <ServiceBookingModal listing={listing} onClose={() => setShowBookingModal(false)} />
+      )}
     </>
   )
 }
