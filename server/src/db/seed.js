@@ -113,30 +113,40 @@ const STOREFRONT_DEFINITIONS = [
     slug: 'alice-handmade',
     display_name: "Alice's Handmade",
     bio: 'Custom crochet, knitted goods, and fiber art commissions.',
+    avatar_url:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=120&h=120&fit=crop&auto=format',
   },
   {
     owner_username: 'bobcraft',
     slug: 'bobs-woodshop',
     display_name: "Bob's Woodshop",
     bio: 'Hand-crafted wooden furniture, cutting boards, and décor.',
+    avatar_url:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&auto=format',
   },
   {
     owner_username: 'carladesign',
     slug: 'carla-studio',
     display_name: 'Carla Studio',
     bio: 'Graphic design, logo work, and brand identity packages.',
+    avatar_url:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&h=120&fit=crop&auto=format',
   },
   {
     owner_username: 'danibakes',
     slug: 'danis-kitchen',
     display_name: "Dani's Kitchen",
     bio: 'Custom cakes, cookies, and baking lessons for all levels.',
+    avatar_url:
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&h=120&fit=crop&auto=format',
   },
   {
     owner_username: 'eveteach',
     slug: 'eve-tutors',
     display_name: 'Eve Tutors',
     bio: 'Math, science, and coding tutoring — middle school through college.',
+    avatar_url:
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&h=120&fit=crop&auto=format',
   },
 ]
 
@@ -165,7 +175,9 @@ const LISTING_DEFINITIONS = [
     category: 'Home & Decor',
     inventory_count: 8,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/knit-blanket/400/300',
+    // cream chunky-knit blanket draped over a couch
+    image_url:
+      'https://images.unsplash.com/photo-1674475760738-8c7af859f821?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'alice-handmade',
@@ -177,7 +189,9 @@ const LISTING_DEFINITIONS = [
     category: 'Accessories',
     inventory_count: 15,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/crochet-bag/400/300',
+    // open-weave crochet market bag
+    image_url:
+      'https://images.unsplash.com/photo-1589912187345-e6f884f958af?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'alice-handmade',
@@ -189,7 +203,9 @@ const LISTING_DEFINITIONS = [
     category: 'Lessons',
     inventory_count: null,
     delivery_window_days: 7,
-    image_url: 'https://picsum.photos/seed/crochet-lesson/400/300',
+    // close-up of hands holding a crochet hook and yarn
+    image_url:
+      'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'alice-handmade',
@@ -201,10 +217,12 @@ const LISTING_DEFINITIONS = [
     category: 'Custom Work',
     inventory_count: null,
     delivery_window_days: 21,
-    image_url: 'https://picsum.photos/seed/crochet-commission/400/300',
+    // colorful knit textile commission work
+    image_url:
+      'https://images.unsplash.com/photo-1674475762498-75310193b4f4?w=400&h=300&fit=crop&auto=format',
   },
 
-  // Bob's Woodshop — products only
+  // Bob's Woodshop — products + consultation service
   {
     storefront_slug: 'bobs-woodshop',
     type: 'product',
@@ -215,7 +233,9 @@ const LISTING_DEFINITIONS = [
     category: 'Kitchen',
     inventory_count: 12,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/cutting-board/400/300',
+    // end-grain walnut cutting board showing rich wood grain
+    image_url:
+      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'bobs-woodshop',
@@ -227,7 +247,9 @@ const LISTING_DEFINITIONS = [
     category: 'Home & Decor',
     inventory_count: 6,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/wood-shelf/400/300',
+    // natural wood floating shelves mounted on a white wall with plants and books
+    image_url:
+      'https://images.unsplash.com/photo-1532372576444-dda954194ad0?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'bobs-woodshop',
@@ -239,7 +261,9 @@ const LISTING_DEFINITIONS = [
     category: 'Gifts',
     inventory_count: 20,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/keepsake-box/400/300',
+    // small wooden gift box with engraved lid
+    image_url:
+      'https://images.unsplash.com/photo-1610377507996-dcd4f0cfc125?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'bobs-woodshop',
@@ -251,10 +275,12 @@ const LISTING_DEFINITIONS = [
     category: 'Custom Work',
     inventory_count: null,
     delivery_window_days: 5,
-    image_url: 'https://picsum.photos/seed/furniture-consult/400/300',
+    // craftsman in workshop examining a wood plank with tape measure
+    image_url:
+      'https://images.unsplash.com/photo-1581539250439-c96689b516dd?w=400&h=300&fit=crop&auto=format',
   },
 
-  // Carla Studio — design services
+  // Carla Studio — design services + digital product
   {
     storefront_slug: 'carla-studio',
     type: 'service',
@@ -265,7 +291,9 @@ const LISTING_DEFINITIONS = [
     category: 'Design',
     inventory_count: null,
     delivery_window_days: 7,
-    image_url: 'https://picsum.photos/seed/logo-design/400/300',
+    // designer sketching logo concepts on paper with pens and iPad nearby
+    image_url:
+      'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'carla-studio',
@@ -277,7 +305,9 @@ const LISTING_DEFINITIONS = [
     category: 'Design',
     inventory_count: null,
     delivery_window_days: 14,
-    image_url: 'https://picsum.photos/seed/brand-kit/400/300',
+    // brand identity mockup with color swatches, logo, and stationery flat lay
+    image_url:
+      'https://images.unsplash.com/photo-1716471330463-f475b00f0506?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'carla-studio',
@@ -289,7 +319,9 @@ const LISTING_DEFINITIONS = [
     category: 'Design',
     inventory_count: null,
     delivery_window_days: 3,
-    image_url: 'https://picsum.photos/seed/social-templates/400/300',
+    // phone and tablet showing colorful social media post templates
+    image_url:
+      'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'carla-studio',
@@ -301,7 +333,9 @@ const LISTING_DEFINITIONS = [
     category: 'Templates',
     inventory_count: 999,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/business-card/400/300',
+    // stack of clean modern business cards fanned out on a desk
+    image_url:
+      'https://images.unsplash.com/photo-1718670013921-2f144aba173a?w=400&h=300&fit=crop&auto=format',
   },
 
   // Dani's Kitchen — baked goods + lessons
@@ -315,7 +349,9 @@ const LISTING_DEFINITIONS = [
     category: 'Food & Baking',
     inventory_count: 10,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/sugar-cookies/400/300',
+    // beautifully decorated royal icing sugar cookies on a white surface
+    image_url:
+      'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'danis-kitchen',
@@ -327,7 +363,9 @@ const LISTING_DEFINITIONS = [
     category: 'Food & Baking',
     inventory_count: 5,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/celebration-cake/400/300',
+    // tall layered celebration cake with smooth buttercream and flowers on top
+    image_url:
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'danis-kitchen',
@@ -339,7 +377,9 @@ const LISTING_DEFINITIONS = [
     category: 'Lessons',
     inventory_count: null,
     delivery_window_days: 7,
-    image_url: 'https://picsum.photos/seed/baking-lesson/400/300',
+    // baker's hands kneading dough on a floured wooden surface
+    image_url:
+      'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'danis-kitchen',
@@ -351,10 +391,12 @@ const LISTING_DEFINITIONS = [
     category: 'Custom Work',
     inventory_count: null,
     delivery_window_days: 3,
-    image_url: 'https://picsum.photos/seed/cake-consult/400/300',
+    // pastry chef piping decorative flowers onto a cake tier
+    image_url:
+      'https://images.unsplash.com/photo-1649773289945-93a96051fd18?w=400&h=300&fit=crop&auto=format',
   },
 
-  // Eve Tutors — tutoring services
+  // Eve Tutors — tutoring services + digital workbook
   {
     storefront_slug: 'eve-tutors',
     type: 'service',
@@ -365,7 +407,9 @@ const LISTING_DEFINITIONS = [
     category: 'Tutoring',
     inventory_count: null,
     delivery_window_days: 3,
-    image_url: 'https://picsum.photos/seed/sat-tutoring/400/300',
+    // student and tutor sitting at a desk working through math problems together
+    image_url:
+      'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'eve-tutors',
@@ -377,7 +421,9 @@ const LISTING_DEFINITIONS = [
     category: 'Tutoring',
     inventory_count: null,
     delivery_window_days: 14,
-    image_url: 'https://picsum.photos/seed/python-course/400/300',
+    // laptop screen showing Python code in a dark IDE
+    image_url:
+      'https://images.unsplash.com/photo-1542621334-a254cf47733d?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'eve-tutors',
@@ -389,7 +435,9 @@ const LISTING_DEFINITIONS = [
     category: 'Tutoring',
     inventory_count: null,
     delivery_window_days: 2,
-    image_url: 'https://picsum.photos/seed/algebra-tutor/400/300',
+    // hand writing algebra equations on graph paper with a pencil
+    image_url:
+      'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=400&h=300&fit=crop&auto=format',
   },
   {
     storefront_slug: 'eve-tutors',
@@ -401,7 +449,9 @@ const LISTING_DEFINITIONS = [
     category: 'Study Materials',
     inventory_count: 999,
     delivery_window_days: null,
-    image_url: 'https://picsum.photos/seed/sat-workbook/400/300',
+    // open workbook with math problems and a pencil resting on the page
+    image_url:
+      'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=400&h=300&fit=crop&auto=format',
   },
 ]
 
@@ -635,10 +685,10 @@ async function seed() {
       const owner = userByUsername[sf.owner_username]
 
       const { rows } = await client.query(
-        `INSERT INTO storefronts (owner_id, slug, display_name, bio)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO storefronts (owner_id, slug, display_name, bio, avatar_url)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [owner.id, sf.slug, sf.display_name, sf.bio]
+        [owner.id, sf.slug, sf.display_name, sf.bio, sf.avatar_url ?? null]
       )
       insertedStorefronts.push(rows[0])
     }
