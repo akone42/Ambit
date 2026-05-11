@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
+import api from '../lib/axios.js'
 
 export default function BookingModal({ listing, onClose, onSuccess }) {
   const [requestedDate, setRequestedDate] = useState('')
@@ -14,23 +15,12 @@ export default function BookingModal({ listing, onClose, onSuccess }) {
     setLoading(true)
     setError(null)
     try {
-      // Read csrf_token directly from the cookie
-      const csrfToken = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('csrf_token='))
-        ?.split('=')[1]
-
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify({ listingId: listing.id, requestedDate }),
+      // Use the configured axios instance — it automatically attaches the
+      // in-memory CSRF token via the request interceptor.
+      const { data } = await api.post('/bookings', {
+        listingId: listing.id,
+        requestedDate,
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Booking failed')
       onSuccess(data.order)
     } catch (err) {
       setError(err.message)

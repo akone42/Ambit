@@ -11,7 +11,10 @@ router.post('/', authMiddleware, async (req, res) => {
   if (!shippingAddress) return res.status(400).json({ error: 'shippingAddress required' })
 
   try {
-    const order = await createProductOrder(req.user.id, { shippingAddress })
+    const order = await createProductOrder(req.user.id, {
+      shippingAddress,
+      items: req.body.items, // client-side cart items: [{ listing_id, quantity }]
+    })
     res.status(201).json({ order })
   } catch (err) {
     if (err.status === 409) {

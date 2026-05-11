@@ -6,23 +6,48 @@ import { pool } from '../db/pool.js'
  Validates inventory with row-level locks to prevent race conditions
   and returns detailed conflict info if inventory is insufficient.
   */
-export async function createProductOrder(userId, { shippingAddress }) {
+// items (optional): array of { listing_id, quantity } from the client's local cart.
+// If provided, we look up only those listings from the DB (skipping the server-side
+// cart_items table). If omitted, we fall back to reading the DB cart — this keeps
+// backward compatibility with any flow that syncs items to the server first.
+export async function createProductOrder(userId, { shippingAddress, items: bodyItems }) {
   const client = await pool.connect()
 
   try {
     await client.query('BEGIN')
 
-    // Fetch cart items with a row-level lock to prevent race conditions
-    const { rows: cartItems } = await client.query(
-      `SELECT
-         ci.listing_id, ci.quantity,
-         l.title, l.price, l.inventory_count, l.type
-       FROM cart_items ci
-       JOIN listings l ON l.id = ci.listing_id
-       WHERE ci.user_id = $1
-       FOR UPDATE OF l`,
-      [userId]
-    )
+    let cartItems
+
+    if (bodyItems && bodyItems.length > 0) {
+      // Client sent items directly — look them up from listings with a lock
+      const listingIds = bodyItems.map((i) => i.listing_id)
+      const { rows: listings } = await client.query(
+        `SELECT id AS listing_id, title, price, inventory_count, type
+         FROM listings
+         WHERE id = ANY($1)
+         FOR UPDATE`,
+        [listingIds]
+      )
+
+      // Merge the quantities from the client with the listing data from the DB
+      const listingMap = Object.fromEntries(listings.map((l) => [l.listing_id, l]))
+      cartItems = bodyItems
+        .map((i) => ({ ...listingMap[i.listing_id], quantity: i.quantity }))
+        .filter((i) => i.title) // drop any listing_id that wasn't found
+    } else {
+      // Fall back to the server-side cart_items table
+      const { rows } = await client.query(
+        `SELECT
+           ci.listing_id, ci.quantity,
+           l.title, l.price, l.inventory_count, l.type
+         FROM cart_items ci
+         JOIN listings l ON l.id = ci.listing_id
+         WHERE ci.user_id = $1
+         FOR UPDATE OF l`,
+        [userId]
+      )
+      cartItems = rows
+    }
 
     if (cartItems.length === 0) {
       await client.query('ROLLBACK')

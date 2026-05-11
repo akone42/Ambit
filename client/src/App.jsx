@@ -15,6 +15,7 @@ import CheckoutPage from './pages/CheckoutPage.jsx'
 import OrdersPage from './pages/OrdersPage.jsx'
 import ListingPage from './pages/ListingPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
+import OrderConfirmationPage from './pages/OrderConfirmationPage.jsx'
 
 export const ThemeContext = createContext({ dark: false, toggleDark: () => {} })
 export function useTheme() {
@@ -59,6 +60,7 @@ export default function App() {
                 }
               />
               <Route path="/booking-confirmation/:orderId" element={<BookingConfirmationPage />} />
+              <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
               <Route
                 path="/checkout"
                 element={

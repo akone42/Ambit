@@ -138,6 +138,7 @@ CartItem.propTypes = {
       price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       type: PropTypes.oneOf(['service', 'product']).isRequired,
       image_url: PropTypes.string,
+      inventory_count: PropTypes.number,
     }).isRequired,
     quantity: PropTypes.number.isRequired,
     requestedDate: PropTypes.string,
@@ -149,7 +150,12 @@ CartItem.propTypes = {
 function CartItem({ item, onRemove, onQuantityChange }) {
   const { listing, quantity, requestedDate } = item
   const isService = listing.type === 'service'
+  const maxInventory =
+    listing.type === 'product' && listing.inventory_count !== null
+      ? Number(listing.inventory_count)
+      : null
 
+  const reachedMaxInventory = maxInventory !== null && quantity >= maxInventory
   return (
     <div className="flex gap-3">
       {/* Image */}
@@ -195,13 +201,19 @@ function CartItem({ item, onRemove, onQuantityChange }) {
             <span className="text-sm w-6 text-center">{quantity}</span>
             <button
               onClick={() => onQuantityChange(quantity + 1)}
-              className="w-6 h-6 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 text-sm flex items-center justify-center"
+              disabled={reachedMaxInventory}
+              className={`w-6 h-6 rounded border border-gray-200 text-sm flex items-center justify-center ${
+                reachedMaxInventory
+                  ? 'text-gray-300 bg-gray-100 cursor-not-allowed'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
             >
               +
             </button>
           </div>
         )}
       </div>
+      {reachedMaxInventory && <p className="text-xs text-amber-600">Max stock reached</p>}
     </div>
   )
 }
