@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NAVBAR
  *
  * Displayed on every page. Shows different content based on auth state:
@@ -7,7 +7,7 @@
  *   Buyer:          Logo | Hello, frank | [Logout]
  *   Seller:         Logo | Hello, alice | [Dashboard] [Logout]
  *
- * useAuth() gives us the current user — the Navbar re-renders automatically
+ * useAuth() gives us the current user ΓÇö the Navbar re-renders automatically
  * whenever the user logs in or out because AuthContext state changed.
  *
  * Link vs <a>:
@@ -159,7 +159,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Cart button — visible to everyone */}
+        {/* Cart button ΓÇö visible to everyone */}
         <button
           onClick={openCart}
           className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-colors"

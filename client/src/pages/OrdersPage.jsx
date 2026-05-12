@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Order History page
  * Accessible to: any logged-in user (buyers and sellers)
  *
@@ -13,7 +13,7 @@ import PropTypes from 'prop-types'
 import api from '../lib/axios.js'
 import StarRating from '../components/StarRating.jsx'
 
-// ── Inline review form shown per order item ──────────────────────────────────
+// ΓöÇΓöÇ Inline review form shown per order item ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function ReviewForm({ listingId, listingTitle, onSubmitted }) {
   const [rating, setRating] = useState(0)
   const [body, setBody] = useState('')
@@ -55,7 +55,7 @@ function ReviewForm({ listingId, listingTitle, onSubmitted }) {
         disabled={submitting}
         className="bg-indigo-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
       >
-        {submitting ? 'Submitting…' : 'Submit review'}
+        {submitting ? 'SubmittingΓÇª' : 'Submit review'}
       </button>
     </form>
   )
@@ -111,7 +111,7 @@ export default function OrdersPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Loading your orders…</div>
+  if (loading) return <div className="p-8 text-gray-400">Loading your ordersΓÇª</div>
   if (error) return <div className="p-8 text-red-500">{error}</div>
 
   const canReview = (order) => order.status === 'confirmed' || order.status === 'fulfilled'
@@ -173,12 +173,12 @@ export default function OrdersPage() {
                         <div className="flex items-center justify-between">
                           <p className="text-xs text-gray-700 font-medium">{item.listing_title}</p>
                           <p className="text-xs text-gray-400">
-                            × {item.quantity} — ${Number(item.price_at_purchase).toFixed(2)}
+                            ├ù {item.quantity} ΓÇö ${Number(item.price_at_purchase).toFixed(2)}
                           </p>
                         </div>
 
                         {canReview(order) && alreadyReviewed && (
-                          <p className="text-xs text-green-600 mt-1">✓ You reviewed this</p>
+                          <p className="text-xs text-green-600 mt-1">Γ£ô You reviewed this</p>
                         )}
 
                         {canReview(order) && !alreadyReviewed && (
@@ -204,7 +204,7 @@ export default function OrdersPage() {
                     disabled={updatingOrderId === order.id}
                     className="text-xs px-3 py-1.5 border border-red-200 text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-50"
                   >
-                    {updatingOrderId === order.id ? 'Cancelling…' : 'Cancel order'}
+                    {updatingOrderId === order.id ? 'CancellingΓÇª' : 'Cancel order'}
                   </button>
                 </div>
               )}

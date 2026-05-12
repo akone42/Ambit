@@ -19,7 +19,8 @@
 
 import PropTypes from 'prop-types'
 import { createContext, useContext, useEffect, useState } from 'react'
-import api from '../lib/axios.js'
+import api, { saveToken } from '../lib/axios.js'
+import useCartStore from '../store/cartStore.js'
 
 // createContext() creates the context object.
 // The argument (null) is the default value — only used if a component
@@ -60,6 +61,10 @@ export function AuthProvider({ children }) {
   // We re-throw errors so the form component can catch them and show error messages.
   async function register(email, username, password) {
     const res = await api.post('/auth/register', { email, username, password })
+    // Save the raw JWT so the axios interceptor can send it as a Bearer token.
+    // This is needed in cross-origin deployments where the browser blocks
+    // the httpOnly cookie from being stored.
+    if (res.data.token) saveToken(res.data.token)
     setUser(res.data.user)
     return res.data.user
   }
@@ -69,6 +74,7 @@ export function AuthProvider({ children }) {
   // ---------------------------------------------------------------------------
   async function login(email, password) {
     const res = await api.post('/auth/login', { email, password })
+    if (res.data.token) saveToken(res.data.token)
     setUser(res.data.user)
     return res.data.user
   }
@@ -80,7 +86,9 @@ export function AuthProvider({ children }) {
   // We also set user to null locally so the UI updates immediately.
   async function logout() {
     await api.post('/auth/logout')
+    saveToken(null) // clear stored JWT
     setUser(null)
+    useCartStore.getState().clearCart()
   }
 
   //refetch the user data from the server,

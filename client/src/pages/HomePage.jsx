@@ -63,11 +63,16 @@ export default function HomePage() {
     api
       .get(`/listings${query ? `?${query}` : ''}`)
       .then((res) => {
-        setListings(res.data.listings)
+        const data = res.data?.listings
+        // eslint-disable-next-line no-console
+        if (!Array.isArray(data)) console.error('Unexpected listings response:', res.data)
+        setListings(Array.isArray(data) ? data : [])
         setError(null)
         setLoading(false)
       })
-      .catch(() => {
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('Listings fetch error:', err)
         setError('Failed to load listings. Please try again.')
         setLoading(false)
       })

@@ -8,52 +8,56 @@
  * Why not just use fetch()?
  * Axios gives us:
  *   - Automatic JSON parsing (fetch requires a manual .json() call)
- *   - Request/response interceptors (we use one for CSRF below)
+ *   - Request/response interceptors (we use one for auth below)
  *   - Consistent error objects (fetch only rejects on network failure,
  *     not on 4xx/5xx — Axios rejects on both)
  */
 
 import axios from 'axios'
 
+const TOKEN_KEY = 'ambit_token'
+
+/**
+ * Persist and retrieve the JWT so the auth header survives page refreshes.
+ * We use localStorage because cross-origin deployments (Vercel → Render)
+ * prevent httpOnly cookies from being stored by the browser's third-party
+ * cookie policy. The token is stored as a plain string; it's already signed
+ * and verified server-side so there is no security benefit to encrypting it
+ * in localStorage.
+ */
+export function saveToken(token) {
+  if (token) localStorage.setItem(TOKEN_KEY, token)
+  else localStorage.removeItem(TOKEN_KEY)
+}
+
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
 const api = axios.create({
   // baseURL: every request made with this instance prepends this.
-  // So api.get('/auth/me') becomes a request to /api/auth/me.
-  // Vite's proxy (vite.config.js) forwards /api/* to http://localhost:3001.
-  baseURL: '/api',
+  // In development: '/api' — Vite's proxy forwards to http://localhost:3001.
+  // In production: VITE_API_URL points directly to the Render server URL.
+  baseURL: import.meta.env.VITE_API_URL ?? '/api',
 
-  // withCredentials: true tells the browser to include cookies
-  // on every request, even during development when the frontend (port 5173)
-  // and backend (port 3001) are on different ports.
-  // Without this, the JWT cookie is never sent and every protected
-  // route returns 401.
+  // withCredentials: true keeps cookie-based auth working in development
+  // (same-origin via Vite proxy). In production the Bearer header is used
+  // instead because browsers block third-party cookies cross-origin.
   withCredentials: true,
 })
 
 // ---------------------------------------------------------------------------
-// REQUEST INTERCEPTOR — attach CSRF token
+// REQUEST INTERCEPTOR — attach Bearer token
 // ---------------------------------------------------------------------------
-// An interceptor is a function that runs automatically before every request.
-// This one reads the csrf_token cookie (set by the server, readable by JS)
-// and adds it as the X-CSRF-Token header.
-//
-// Why do we need to do this manually?
-// The browser sends cookies automatically, but custom headers must be set
-// explicitly. The server's verifyCsrf middleware checks for this header,
-// so without it every POST/PUT/DELETE would return 403.
+// Runs before every request. If we have a stored JWT, add it as the
+// Authorization header. The server checks this header before falling back
+// to the cookie, so this works in both cross-origin (production) and
+// same-origin (development) deployments.
 api.interceptors.request.use((config) => {
-  // Read the csrf_token cookie.
-  // document.cookie is a single string of all cookies:
-  //   "csrf_token=abc123; other_cookie=xyz"
-  // We split by '; ', find the right one, then split by '=' to get the value.
-  const csrfToken = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('csrf_token='))
-    ?.split('=')[1]
-
-  if (csrfToken) {
-    config.headers['x-csrf-token'] = csrfToken
+  const token = getToken()
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
   }
-
   return config
 })
 

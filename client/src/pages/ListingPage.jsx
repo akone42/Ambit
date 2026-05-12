@@ -180,10 +180,16 @@ export default function ListingPage() {
     )
   }
 
-  const inCart = items.some((i) => i.listing.id === listing.id)
+  const cartItem = items.find((i) => i.listing.id === listing.id)
+  const inCart = Boolean(cartItem)
   const outOfStock = listing.type === 'product' && listing.inventory_count === 0
+  const reachedMaxInventory =
+    listing.type === 'product' &&
+    listing.inventory_count !== null &&
+    cartItem?.quantity >= listing.inventory_count
 
   function handleAddToCart() {
+    if (outOfStock || reachedMaxInventory) return
     addItem(listing)
   }
 
@@ -282,16 +288,22 @@ export default function ListingPage() {
           {listing.type === 'product' ? (
             <button
               onClick={handleAddToCart}
-              disabled={outOfStock}
+              disabled={outOfStock || reachedMaxInventory}
               className={`w-full py-3 rounded-xl font-medium transition-colors ${
-                outOfStock
+                outOfStock || reachedMaxInventory
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : inCart
                     ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                     : 'bg-indigo-600 text-white hover:bg-indigo-700'
               }`}
             >
-              {outOfStock ? 'Out of stock' : inCart ? 'Add more to cart' : 'Add to cart'}
+              {outOfStock
+                ? 'Out of stock'
+                : reachedMaxInventory
+                  ? 'Max stock reached'
+                  : inCart
+                    ? 'Add more to cart'
+                    : 'Add to cart'}
             </button>
           ) : (
             <button

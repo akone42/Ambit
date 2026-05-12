@@ -10,7 +10,7 @@
 import express from 'express'
 import { pool } from '../db/pool.js'
 import { StorefrontSchema } from '@ambit/shared'
-import { authMiddleware } from '../middleware/auth.js'
+import { requireRole, authMiddleware } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -119,7 +119,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     return res.status(400).json({ errors: result.error.flatten().fieldErrors })
   }
 
-  const { display_name, slug, bio, avatar_url, cancel_window_hours } = result.data
+  const { display_name, slug, bio, avatar_url } = result.data
 
   try {
     // Fetch the storefront first so we can verify ownership.
@@ -141,18 +141,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
        SET display_name = COALESCE($1, display_name),
            slug         = COALESCE($2, slug),
            bio          = COALESCE($3, bio),
-           avatar_url   = COALESCE($4, avatar_url),
-          cancel_window_hours = COALESCE($5, cancel_window_hours)
-       WHERE id = $6
+           avatar_url   = COALESCE($4, avatar_url)
+       WHERE id = $5
        RETURNING *`,
-      [
-        display_name ?? null,
-        slug ?? null,
-        bio ?? null,
-        avatar_url ?? null,
-        cancel_window_hours ?? null,
-        req.params.id,
-      ]
+      [display_name ?? null, slug ?? null, bio ?? null, avatar_url ?? null, req.params.id]
     )
 
     res.json({ storefront: rows[0] })

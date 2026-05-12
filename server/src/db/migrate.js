@@ -103,24 +103,6 @@ const sql = `
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(listing_id, buyer_id)
   );
-
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS booking_fee_charged BOOLEAN DEFAULT false;
-ALTER TABLE storefronts ADD COLUMN IF NOT EXISTS cancel_window_hours INTEGER DEFAULT 24;
-
-CREATE TABLE IF NOT EXISTS notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  type VARCHAR(50) NOT NULL,
-  title VARCHAR(120) NOT NULL,
-  body TEXT,
-  order_id UUID REFERENCES orders(id),
-  read BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications(user_id, created_at DESC);
 `
 
 async function migrate() {

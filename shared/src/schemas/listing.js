@@ -5,6 +5,7 @@ const BaseListingSchema = z.object({
   description: z.string().min(10).max(2000),
   price: z.number().positive(),
   category: z.string().min(1),
+  image_url: z.string().url().optional().or(z.literal('')),
 })
 
 export const ServiceListingSchema = BaseListingSchema.extend({

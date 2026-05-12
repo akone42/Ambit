@@ -22,7 +22,49 @@ async function registerUser(agent, overrides = {}) {
 
 describe('Auth routes', () => {
   beforeEach(async () => {
-    await pool.query("DELETE FROM users WHERE email LIKE 'test%@example.com'")
+    await pool.query(`
+      DELETE FROM reviews
+      WHERE listing_id IN (
+        SELECT id FROM listings
+        WHERE title LIKE 'Test %'
+           OR title LIKE 'Updated %'
+      )
+    `)
+
+    await pool.query(`
+      DELETE FROM order_items
+      WHERE listing_id IN (
+        SELECT id FROM listings
+        WHERE title LIKE 'Test %'
+           OR title LIKE 'Updated %'
+      )
+    `)
+
+    await pool.query(`
+      DELETE FROM cart_items
+      WHERE listing_id IN (
+        SELECT id FROM listings
+        WHERE title LIKE 'Test %'
+           OR title LIKE 'Updated %'
+      )
+    `)
+
+    await pool.query(`
+      DELETE FROM orders
+      WHERE buyer_id IN (
+        SELECT id FROM users
+        WHERE email LIKE 'test%@example.com'
+      )
+    `)
+
+    await pool.query(`
+      DELETE FROM listings
+      WHERE title LIKE 'Test %'
+         OR title LIKE 'Updated %'
+    `)
+
+    await pool.query(`DELETE FROM storefronts WHERE slug LIKE 'test-%' `)
+    await pool.query(`DELETE FROM users WHERE email LIKE 'test%@example.com'`)
   })
 
   afterAll(async () => {

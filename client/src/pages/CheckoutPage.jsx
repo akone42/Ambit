@@ -122,8 +122,16 @@ function CheckoutForm() {
         })
       }
 
+      // Snapshot cart before clearing — confirmation page needs the item details
+      const confirmedItems = [...items]
       clearCart()
-      navigate('/', { state: { orderSuccess: true } })
+      navigate('/order-confirmation', {
+        state: {
+          items: confirmedItems,
+          shippingAddress: shippingData,
+          total: grandTotal,
+        },
+      })
     } catch (err) {
       if (err.response?.status === 409) {
         setConflicts(err.response.data.conflicts || [])
@@ -312,7 +320,7 @@ function ServiceDateRow({ item, onDateChange }) {
         type="date"
         min={minStr}
         max={maxStr}
-        value={item.requestedDate || ''}
+        value={item.requestedDate ? item.requestedDate.split('T')[0] : ''}
         onChange={(e) => onDateChange(item.listing.id, e.target.value)}
         className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />

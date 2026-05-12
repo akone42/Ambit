@@ -26,9 +26,15 @@ import jwt from 'jsonwebtoken'
  * After this middleware runs, req.user === { id: 'uuid...', role: 'buyer' }
  */
 export function authMiddleware(req, res, next) {
-  // req.cookies is populated by the cookie-parser middleware we add in index.js.
-  // 'token' is the name we give our JWT cookie when we set it at login.
-  const token = req.cookies?.token
+  // In cross-origin deployments (Vercel frontend + Render backend) browsers
+  // treat the JWT cookie as a third-party cookie and may not store or send it.
+  // We accept the token from TWO sources, in priority order:
+  //   1. Authorization: Bearer <token> header  (preferred in cross-origin)
+  //   2. 'token' httpOnly cookie               (works in same-origin / dev)
+  const bearerToken = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7)
+    : null
+  const token = bearerToken || req.cookies?.token
 
   if (!token) {
     // 401 Unauthorized — the request has no authentication credentials at all

@@ -14,11 +14,17 @@ export default function ListingCard({ listing, isOwner = false }) {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const inCart = items.some((i) => i.listing.id === listing.id)
+  const cartItem = items.find((i) => i.listing.id === listing.id)
+  const inCart = Boolean(cartItem)
   const outOfStock = listing.type === 'product' && listing.inventory_count === 0
+  const reachedMaxInventory =
+    listing.type === 'product' &&
+    listing.inventory_count !== null &&
+    cartItem?.quantity >= listing.inventory_count
 
   function handleAddToCart(e) {
     e.preventDefault()
+    if (outOfStock || reachedMaxInventory) return
     addItem(listing)
   }
 
@@ -116,16 +122,22 @@ export default function ListingCard({ listing, isOwner = false }) {
           {isOwner ? null : listing.type === 'product' ? (
             <button
               onClick={handleAddToCart}
-              disabled={outOfStock}
+              disabled={outOfStock || reachedMaxInventory}
               className={`mt-3 w-full py-2 rounded-lg text-xs font-medium transition-colors ${
-                outOfStock
+                outOfStock || reachedMaxInventory
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : inCart
                     ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                     : 'bg-indigo-600 text-white hover:bg-indigo-700'
               }`}
             >
-              {outOfStock ? 'Out of stock' : inCart ? 'Add more' : 'Add to cart'}
+              {outOfStock
+                ? 'Out of stock'
+                : reachedMaxInventory
+                  ? 'Max stock reached'
+                  : inCart
+                    ? 'Add more'
+                    : 'Add to cart'}
             </button>
           ) : (
             <button

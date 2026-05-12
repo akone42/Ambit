@@ -17,11 +17,28 @@ const useCartStore = create(
       addItem: (listing, quantity = 1, requestedDate = null) => {
         const { items } = get()
         const idx = items.findIndex((i) => i.listing.id === listing.id)
+
+        const maxInventory =
+          listing.type === 'product' && listing.inventory_count !== null
+            ? Number(listing.inventory_count)
+            : null
+
         if (idx !== -1) {
+          const currentQuantity = items[idx].quantity
+          const nextQuantity = currentQuantity + quantity
+
+          if (maxInventory !== null && nextQuantity > maxInventory) {
+            return
+          }
+
           const next = [...items]
-          next[idx] = { ...next[idx], quantity: next[idx].quantity + quantity }
+          next[idx] = { ...next[idx], quantity: nextQuantity }
           set({ items: next, isOpen: true })
         } else {
+          if (maxInventory !== null && quantity > maxInventory) {
+            return
+          }
+
           set({ items: [...items, { listing, quantity, requestedDate }], isOpen: true })
         }
       },
@@ -34,8 +51,22 @@ const useCartStore = create(
           get().removeItem(listingId)
           return
         }
+
         set({
-          items: get().items.map((i) => (i.listing.id === listingId ? { ...i, quantity } : i)),
+          items: get().items.map((i) => {
+            if (i.listing.id !== listingId) return i
+
+            const maxInventory =
+              i.listing.type === 'product' && i.listing.inventory_count !== null
+                ? Number(i.listing.inventory_count)
+                : null
+
+            if (maxInventory !== null && quantity > maxInventory) {
+              return i
+            }
+
+            return { ...i, quantity }
+          }),
         })
       },
 
