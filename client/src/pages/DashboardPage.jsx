@@ -27,12 +27,15 @@ function StorefrontForm({ existing, onSave }) {
     slug: existing?.slug ?? '',
     bio: existing?.bio ?? '',
     avatar_url: existing?.avatar_url ?? '',
+    // Cancel window — seller configures how long buyers have to cancel
+    cancel_window_hours: existing?.cancel_window_hours ?? 24,
   })
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
 
   function handleChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const value = e.target.name === 'cancel_window_hours' ? Number(e.target.value) : e.target.value
+    setForm((prev) => ({ ...prev, [e.target.name]: value }))
   }
 
   async function handleSubmit(e) {
@@ -110,6 +113,30 @@ function StorefrontForm({ existing, onSave }) {
         currentUrl={form.avatar_url || null}
         onUpload={(url) => setForm((prev) => ({ ...prev, avatar_url: url }))}
       />
+
+      {/* Cancel window — how long buyers have to cancel after placing an order */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Cancellation window{' '}
+          <span className="text-gray-400 font-normal">(hours buyers have to cancel)</span>
+        </label>
+        <select
+          name="cancel_window_hours"
+          value={form.cancel_window_hours}
+          onChange={handleChange}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value={1}>1 hour</option>
+          <option value={6}>6 hours</option>
+          <option value={12}>12 hours</option>
+          <option value={24}>24 hours (default)</option>
+          <option value={48}>48 hours</option>
+          <option value={72}>72 hours</option>
+        </select>
+        <p className="text-xs text-gray-400 mt-1">
+          Once you confirm an order, buyers cannot cancel regardless of this window.
+        </p>
+      </div>
 
       <button
         type="submit"
@@ -313,6 +340,166 @@ function ListingForm({ existing, onSave, onCancel }) {
   )
 }
 
+// ─── IncomingOrders ───────────────────────────────────────────────────────────
+// Shows all orders placed for the seller's listings with status controls and cancel
+function IncomingOrders({ storefrontId }) {
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [updatingOrder, setUpdatingOrder] = useState(null)
+
+  useEffect(() => {
+    api
+      .get(`/orders/incoming?storefront_id=${storefrontId}`)
+      .then((res) => setOrders(res.data.orders))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [storefrontId])
+
+  async function handleStatusChange(orderId, status) {
+    setUpdatingOrder(orderId)
+    try {
+      const { data } = await api.put(`/orders/${orderId}/status`, { status })
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: data.order.status } : o))
+      )
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update status')
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  async function handleSellerCancel(orderId) {
+    if (!window.confirm('Cancel this order? The buyer will be notified.')) return
+    setUpdatingOrder(orderId)
+    try {
+      await api.post(`/orders/${orderId}/cancel`)
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'cancelled' } : o)))
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not cancel order.')
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  if (loading) return <p className="text-gray-400 text-sm">Loading orders…</p>
+
+  if (orders.length === 0) {
+    return <p className="text-gray-400 text-sm">No incoming orders yet.</p>
+  }
+
+  const statusColors = {
+    pending: 'bg-amber-100 text-amber-700',
+    confirmed: 'bg-blue-100 text-blue-700',
+    shipped: 'bg-indigo-100 text-indigo-700',
+    fulfilled: 'bg-green-100 text-green-700',
+    cancelled: 'bg-red-100 text-red-600',
+  }
+
+  return (
+    <div className="space-y-4">
+      {orders.map((order) => (
+        <div key={order.id} className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[order.status] ?? 'bg-gray-100 text-gray-500'}`}
+              >
+                {order.status}
+              </span>
+              <span
+                className={`text-xs font-medium px-2 py-0.5 rounded-full ${order.order_type === 'service' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}
+              >
+                {order.order_type}
+              </span>
+            </div>
+            <span className="text-sm font-semibold text-gray-900">
+              ${Number(order.total).toFixed(2)}
+            </span>
+          </div>
+
+          <p className="text-xs text-gray-500">
+            From: <span className="font-medium">{order.buyer_username}</span>
+          </p>
+          <p className="text-xs text-gray-400">
+            Placed: {new Date(order.created_at).toLocaleDateString()}
+          </p>
+
+          {order.requested_date && (
+            <p className="text-xs text-indigo-600">
+              Requested date: {new Date(order.requested_date).toLocaleDateString()}
+            </p>
+          )}
+
+          {/* Order items */}
+          {order.items?.length > 0 && (
+            <div className="border-t border-gray-100 pt-2 space-y-1">
+              {order.items.map((item) => (
+                <div key={item.listing_id} className="flex justify-between text-xs text-gray-600">
+                  <span>{item.listing_title}</span>
+                  <span>
+                    × {item.quantity} — ${Number(item.price_at_purchase).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Cancellation info if already cancelled */}
+          {order.status === 'cancelled' && order.cancellation_reason && (
+            <p className="text-xs text-red-400 border-t border-gray-100 pt-2">
+              {order.cancellation_reason}
+            </p>
+          )}
+
+          {/* Controls — only for non-cancelled, non-fulfilled orders */}
+          {order.status !== 'cancelled' && order.status !== 'fulfilled' && (
+            <div className="border-t border-gray-100 pt-3 flex flex-wrap gap-2 items-center">
+              {/* Status update buttons */}
+              {order.status === 'pending' && (
+                <button
+                  onClick={() => handleStatusChange(order.id, 'confirmed')}
+                  disabled={updatingOrder === order.id}
+                  className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Confirm order
+                </button>
+              )}
+              {order.status === 'confirmed' && order.order_type === 'product' && (
+                <button
+                  onClick={() => handleStatusChange(order.id, 'shipped')}
+                  disabled={updatingOrder === order.id}
+                  className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  Mark shipped
+                </button>
+              )}
+              {(order.status === 'shipped' || order.status === 'confirmed') && (
+                <button
+                  onClick={() => handleStatusChange(order.id, 'fulfilled')}
+                  disabled={updatingOrder === order.id}
+                  className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  Mark fulfilled
+                </button>
+              )}
+
+              {/* Seller cancel button */}
+              <button
+                onClick={() => handleSellerCancel(order.id)}
+                disabled={updatingOrder === order.id}
+                className="text-xs px-3 py-1.5 border border-red-200 text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-50 ml-auto"
+              >
+                Cancel order
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── DashboardPage ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user, refreshUser } = useAuth()
@@ -327,6 +514,9 @@ export default function DashboardPage() {
   const [showListingForm, setShowListingForm] = useState(false)
   const [editingListing, setEditingListing] = useState(null) // the listing object being edited
 
+  // Tab state — My Listings vs My Orders
+  const [activeTab, setActiveTab] = useState('listings')
+
   // Load the seller's storefront on mount
   useEffect(() => {
     api
@@ -339,13 +529,30 @@ export default function DashboardPage() {
   // Load listings whenever we have a storefront
   useEffect(() => {
     if (!storefront) return
-    api
-      .get(`/listings?storefront_id=${storefront.id}`)
-      .then((res) => {
-        setListings(res.data.listings)
-        setLoadingListings(false)
-      })
-      .catch(() => setLoadingListings(false))
+
+    let isCancelled = false
+
+    const loadListings = async () => {
+      setLoadingListings(true)
+      try {
+        const res = await api.get(`/listings?storefront_id=${storefront.id}`)
+        if (!isCancelled) {
+          setListings(res.data.listings)
+        }
+      } catch (err) {
+        // ignore errors here, listings can stay empty
+      } finally {
+        if (!isCancelled) {
+          setLoadingListings(false)
+        }
+      }
+    }
+
+    loadListings()
+
+    return () => {
+      isCancelled = true
+    }
   }, [storefront])
 
   async function handleStorefrontSaved(saved) {
@@ -415,10 +622,16 @@ export default function DashboardPage() {
 
         {/* Has a storefront, not editing → show details */}
         {storefront && !editingStorefront && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-1">
             <p className="font-semibold text-gray-900">{storefront.display_name}</p>
             <p className="text-indigo-500 text-sm">/shop/{storefront.slug}</p>
-            {storefront.bio && <p className="text-gray-500 text-sm mt-2">{storefront.bio}</p>}
+            {storefront.bio && <p className="text-gray-500 text-sm">{storefront.bio}</p>}
+            <p className="text-xs text-gray-400 pt-1">
+              Cancellation window:{' '}
+              <span className="font-medium text-gray-600">
+                {storefront.cancel_window_hours ?? 24} hours
+              </span>
+            </p>
           </div>
         )}
 
@@ -431,59 +644,99 @@ export default function DashboardPage() {
       {/* ── Listings section — only shown after storefront exists ── */}
       {storefront && (
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">My Listings</h2>
-            {!showListingForm && !editingListing && (
-              <button
-                onClick={() => setShowListingForm(true)}
-                className="bg-indigo-600 text-white text-sm rounded-lg px-3 py-1.5 hover:bg-indigo-700"
-              >
-                + New listing
-              </button>
-            )}
+          {/* Tab bar */}
+          <div className="flex gap-1 border-b border-gray-200 mb-6">
+            <button
+              onClick={() => setActiveTab('listings')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'listings'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              My Listings
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'orders'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Incoming Orders
+            </button>
           </div>
 
-          {/* New listing form */}
-          {showListingForm && (
-            <ListingForm onSave={handleListingSaved} onCancel={() => setShowListingForm(false)} />
+          {/* Listings tab */}
+          {activeTab === 'listings' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">My Listings</h2>
+                {!showListingForm && !editingListing && (
+                  <button
+                    onClick={() => setShowListingForm(true)}
+                    className="bg-indigo-600 text-white text-sm rounded-lg px-3 py-1.5 hover:bg-indigo-700"
+                  >
+                    + New listing
+                  </button>
+                )}
+              </div>
+
+              {/* New listing form */}
+              {showListingForm && (
+                <ListingForm
+                  onSave={handleListingSaved}
+                  onCancel={() => setShowListingForm(false)}
+                />
+              )}
+
+              {/* Listings grid */}
+              {loadingListings ? (
+                <p className="text-gray-400 text-sm">Loading listings…</p>
+              ) : listings.length === 0 ? (
+                <p className="text-gray-400 text-sm">No listings yet. Add your first one!</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {listings.map((listing) => (
+                    <div key={listing.id} className="relative">
+                      {editingListing?.id === listing.id ? (
+                        <ListingForm
+                          existing={listing}
+                          onSave={handleListingSaved}
+                          onCancel={() => setEditingListing(null)}
+                        />
+                      ) : (
+                        <>
+                          <ListingCard listing={listing} isOwner />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => setEditingListing(listing)}
+                              className="text-xs text-indigo-600 hover:underline"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteListing(listing.id)}
+                              className="text-xs text-red-500 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          {/* Listings grid */}
-          {loadingListings ? (
-            <p className="text-gray-400 text-sm">Loading listings…</p>
-          ) : listings.length === 0 ? (
-            <p className="text-gray-400 text-sm">No listings yet. Add your first one!</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {listings.map((listing) => (
-                <div key={listing.id} className="relative">
-                  {editingListing?.id === listing.id ? (
-                    <ListingForm
-                      existing={listing}
-                      onSave={handleListingSaved}
-                      onCancel={() => setEditingListing(null)}
-                    />
-                  ) : (
-                    <>
-                      <ListingCard listing={listing} isOwner />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => setEditingListing(listing)}
-                          className="text-xs text-indigo-600 hover:underline"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteListing(listing.id)}
-                          className="text-xs text-red-500 hover:underline"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+          {/* Orders tab */}
+          {activeTab === 'orders' && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Incoming Orders</h2>
+              <IncomingOrders storefrontId={storefront.id} />
             </div>
           )}
         </section>
@@ -501,4 +754,8 @@ ListingForm.propTypes = {
   existing: PropTypes.object,
   onSave: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
+}
+
+IncomingOrders.propTypes = {
+  storefrontId: PropTypes.string.isRequired,
 }
