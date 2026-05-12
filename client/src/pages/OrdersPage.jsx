@@ -173,12 +173,12 @@ export default function OrdersPage() {
                         <div className="flex items-center justify-between">
                           <p className="text-xs text-gray-700 font-medium">{item.listing_title}</p>
                           <p className="text-xs text-gray-400">
-                            ├ù {item.quantity} ΓÇö ${Number(item.price_at_purchase).toFixed(2)}
+                            × {item.quantity} — ${Number(item.price_at_purchase).toFixed(2)}
                           </p>
                         </div>
 
                         {canReview(order) && alreadyReviewed && (
-                          <p className="text-xs text-green-600 mt-1">Γ£ô You reviewed this</p>
+                          <p className="text-xs text-green-600 mt-1">✓ You reviewed this</p>
                         )}
 
                         {canReview(order) && !alreadyReviewed && (
