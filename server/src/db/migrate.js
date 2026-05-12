@@ -104,6 +104,9 @@ const sql = `
     UNIQUE(listing_id, buyer_id)
   );
 
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS booking_fee_charged BOOLEAN DEFAULT false;
 ALTER TABLE storefronts ADD COLUMN IF NOT EXISTS cancel_window_hours INTEGER DEFAULT 24;
 
 CREATE TABLE IF NOT EXISTS notifications (
