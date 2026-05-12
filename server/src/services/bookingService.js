@@ -54,6 +54,29 @@ export async function createServiceBooking(userId, { listingId, requestedDate })
       [order.id, listingId, listing.price]
     )
 
+    // Fetch the storefront's cancellation window to include in the notification
+    const { rows: sfRows } = await client.query(
+      `SELECT s.cancel_window_hours, s.display_name
+   FROM storefronts s
+   JOIN listings l ON l.storefront_id = s.id
+   WHERE l.id = $1`,
+      [listingId]
+    )
+
+    const cancelWindow = sfRows[0]?.cancel_window_hours ?? 24
+    const storeName = sfRows[0]?.display_name ?? 'the seller'
+
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, body, order_id)
+   VALUES ($1, 'booking_placed', $2, $3, $4)`,
+      [
+        userId,
+        'Booking confirmed',
+        `Your booking with ${storeName} is placed. You may cancel before your requested date, but the booking fee is non-refundable. The seller has ${cancelWindow} hour${cancelWindow !== 1 ? 's' : ''} to confirm.`,
+        order.id,
+      ]
+    )
+
     await client.query('COMMIT')
     return order
   } catch (err) {

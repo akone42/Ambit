@@ -79,6 +79,30 @@ export async function createProductOrder(userId, { shippingAddress }) {
     // Clear the cart
     await client.query(`DELETE FROM cart_items WHERE user_id = $1`, [userId])
 
+    // Notify the buyer of their order with cancellation window info.
+    const { rows: storefrontRows } = await client.query(
+      `SELECT s.cancel_window_hours, s.display_name
+   FROM storefronts s
+   JOIN listings l ON l.storefront_id = s.id
+   WHERE l.id = $1
+   LIMIT 1`,
+      [cartItems[0].listing_id]
+    )
+
+    const cancelWindow = storefrontRows[0]?.cancel_window_hours ?? 24
+    const storeName = storefrontRows[0]?.display_name ?? 'the seller'
+
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, body, order_id)
+   VALUES ($1, 'order_placed', $2, $3, $4)`,
+      [
+        userId,
+        'Order placed successfully',
+        `You have ${cancelWindow} hour${cancelWindow !== 1 ? 's' : ''} to cancel your order from ${storeName}. Once ${storeName} confirms your order and begins production, cancellation will no longer be possible.`,
+        order.id,
+      ]
+    )
+
     await client.query('COMMIT')
     return order
   } catch (err) {
