@@ -3,26 +3,50 @@ import { pool } from '../db/pool.js'
 // Order service function: createProductOrder
 
 /*createProductOrder: Creates an order from the user's cart.
- Validates inventory with row-level locks to prevent race conditions 
-  and returns detailed conflict info if inventory is insufficient.
+- Validates inventory for each item and rolls back if any item is out of stock.
   */
-export async function createProductOrder(userId, { shippingAddress }) {
+export async function createProductOrder(userId, { shippingAddress, items: bodyItems }) {
   const client = await pool.connect()
 
   try {
     await client.query('BEGIN')
 
-    // Fetch cart items with a row-level lock to prevent race conditions
-    const { rows: cartItems } = await client.query(
-      `SELECT
-         ci.listing_id, ci.quantity,
-         l.title, l.price, l.inventory_count, l.type
-       FROM cart_items ci
-       JOIN listings l ON l.id = ci.listing_id
-       WHERE ci.user_id = $1
-       FOR UPDATE OF l`,
-      [userId]
-    )
+    let cartItems
+
+    if (bodyItems && bodyItems.length > 0) {
+      // Optimized path when items are sent in the request body (e.g. from a storefront checkout page).
+      // We still validate inventory here, but we trust the client to send accurate quantities for the items in their cart.
+      const listingIds = bodyItems.map((i) => i.listing_id)
+
+      const { rows: listings } = await client.query(
+        `SELECT id AS listing_id, title, price, inventory_count, type
+         FROM listings
+         WHERE id = ANY($1)
+         FOR UPDATE`,
+        [listingIds]
+      )
+
+      // Merge client quantities with DB listing data.
+      // We trust quantity from the client but validate against DB inventory below.
+      const listingMap = Object.fromEntries(listings.map((l) => [l.listing_id, l]))
+      cartItems = bodyItems
+        .map((i) => ({ ...listingMap[i.listing_id], quantity: i.quantity }))
+        .filter((i) => i.title) // drop any listing_id that doesn't exist in the DB
+    } else {
+      // Fallback: read from server-side cart_items table.
+      // Used when items weren't sent in the body.
+      const { rows } = await client.query(
+        `SELECT
+           ci.listing_id, ci.quantity,
+           l.title, l.price, l.inventory_count, l.type
+         FROM cart_items ci
+         JOIN listings l ON l.id = ci.listing_id
+         WHERE ci.user_id = $1
+         FOR UPDATE OF l`,
+        [userId]
+      )
+      cartItems = rows
+    }
 
     if (cartItems.length === 0) {
       await client.query('ROLLBACK')
@@ -50,10 +74,9 @@ export async function createProductOrder(userId, { shippingAddress }) {
       throw err
     }
 
-    // Calculate total
     const total = cartItems.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0)
 
-    // Create the order
+    // Create the order record
     const { rows: orderRows } = await client.query(
       `INSERT INTO orders (buyer_id, order_type, status, shipping_addr, total)
        VALUES ($1, 'product', 'pending', $2, $3)
@@ -62,7 +85,6 @@ export async function createProductOrder(userId, { shippingAddress }) {
     )
     const order = orderRows[0]
 
-    // Create order items and decrement inventory
     for (const item of cartItems) {
       await client.query(
         `INSERT INTO order_items (order_id, listing_id, quantity, price_at_purchase)
@@ -76,19 +98,16 @@ export async function createProductOrder(userId, { shippingAddress }) {
       )
     }
 
-    // Clear the cart
+    // Clear server-side cart too in case anything was synced there
     await client.query(`DELETE FROM cart_items WHERE user_id = $1`, [userId])
 
-    // In createProductOrder, just before client.query('COMMIT'):
-
-    // Notify the buyer of their order with cancellation window info.
-    // We need the storefront's cancel_window_hours — fetch it from the first listing's storefront.
+    // Notification with cancel window info
     const { rows: storefrontRows } = await client.query(
       `SELECT s.cancel_window_hours, s.display_name
-   FROM storefronts s
-   JOIN listings l ON l.storefront_id = s.id
-   WHERE l.id = $1
-   LIMIT 1`,
+       FROM storefronts s
+       JOIN listings l ON l.storefront_id = s.id
+       WHERE l.id = $1
+       LIMIT 1`,
       [cartItems[0].listing_id]
     )
 
@@ -97,7 +116,7 @@ export async function createProductOrder(userId, { shippingAddress }) {
 
     await client.query(
       `INSERT INTO notifications (user_id, type, title, body, order_id)
-   VALUES ($1, 'order_placed', $2, $3, $4)`,
+       VALUES ($1, 'order_placed', $2, $3, $4)`,
       [
         userId,
         'Order placed successfully',

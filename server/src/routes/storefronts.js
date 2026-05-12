@@ -141,7 +141,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
        SET display_name = COALESCE($1, display_name),
            slug         = COALESCE($2, slug),
            bio          = COALESCE($3, bio),
-           avatar_url   = COALESCE($4, avatar_url)
+           avatar_url   = COALESCE($4, avatar_url),
           cancel_window_hours = COALESCE($5, cancel_window_hours)
        WHERE id = $6
        RETURNING *`,

@@ -1,6 +1,7 @@
 import express from 'express'
 import { authMiddleware } from '../middleware/auth.js'
 import { createProductOrder, cancelOrder } from '../services/orderService.js'
+import { createServiceBooking } from '../services/bookingService.js'
 import { pool } from '../db/pool.js'
 
 const router = express.Router()
@@ -10,8 +11,10 @@ router.post('/', authMiddleware, async (req, res) => {
   const shippingAddress = req.body.shippingAddress || req.body.shipping_address
   if (!shippingAddress) return res.status(400).json({ error: 'shippingAddress required' })
 
+  const items = req.body.items || null
+
   try {
-    const order = await createProductOrder(req.user.id, { shippingAddress })
+    const order = await createProductOrder(req.user.id, { shippingAddress, items })
     res.status(201).json({ order })
   } catch (err) {
     if (err.status === 409) {
@@ -23,6 +26,28 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Order creation failed' })
   }
 })
+// POST /orders/book - Book a single service listing.
+router.post('/book', authMiddleware, async (req, res) => {
+  const { listing_id, requested_date } = req.body
+
+  if (!listing_id) return res.status(400).json({ error: 'listing_id required' })
+  if (!requested_date) return res.status(400).json({ error: 'requested_date required' })
+
+  try {
+    const order = await createServiceBooking(req.user.id, {
+      listingId: listing_id,
+      requestedDate: requested_date,
+    })
+    res.status(201).json({ order })
+  } catch (err) {
+    if (err.status === 404) return res.status(404).json({ error: err.message })
+    if (err.status === 400) return res.status(400).json({ error: err.message })
+    // eslint-disable-next-line no-console
+    console.error('Book service order error:', err)
+    res.status(500).json({ error: 'Booking creation failed' })
+  }
+})
+
 // POST /orders/:id/cancel - Cancel an order if it's still pending and within the cancellation window
 router.post('/:id/cancel', authMiddleware, async (req, res) => {
   try {
