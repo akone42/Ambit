@@ -1,6 +1,6 @@
 import express from 'express'
 import { authMiddleware } from '../middleware/auth.js'
-import { createProductOrder } from '../services/orderService.js'
+import { createProductOrder, cancelOrder } from '../services/orderService.js'
 import { pool } from '../db/pool.js'
 
 const router = express.Router()
@@ -21,6 +21,20 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: err.message })
     }
     res.status(500).json({ error: 'Order creation failed' })
+  }
+})
+// POST /orders/:id/cancel - Cancel an order if it's still pending and within the cancellation window
+router.post('/:id/cancel', authMiddleware, async (req, res) => {
+  try {
+    const order = await cancelOrder(req.params.id, req.user.id)
+    res.json({ order })
+  } catch (err) {
+    if (err.status === 404) return res.status(404).json({ error: err.message })
+    if (err.status === 400) return res.status(400).json({ error: err.message })
+    if (err.status === 403) return res.status(403).json({ error: err.message })
+    // eslint-disable-next-line no-console
+    console.error('Cancel order error:', err)
+    res.status(500).json({ error: 'Server error' })
   }
 })
 // Returns all orders placed by the currently logged-in buyer.
