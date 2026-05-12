@@ -155,7 +155,7 @@ export async function cancelOrder(orderId, requesterId) {
       throw Object.assign(new Error('Order not found'), { status: 404 })
     }
 
-    // 'completed' is not a valid status in this project ΓÇö use 'fulfilled'
+    // 'completed' is not a valid status in this project — use 'fulfilled'
     if (order.status === 'cancelled') {
       await client.query('ROLLBACK')
       throw Object.assign(new Error('Order is already cancelled'), { status: 400 })
@@ -267,12 +267,12 @@ export async function cancelOrder(orderId, requesterId) {
           }
         }
         bookingFeeCharged = true
-        cancellationReason = 'Cancelled by buyer ΓÇö booking fee retained'
+        cancellationReason = 'Cancelled by buyer — booking fee retained'
       }
 
       if (isSeller) {
-        // Seller cancels ΓÇö no fee, buyer gets full refund
-        cancellationReason = 'Cancelled by seller ΓÇö full refund issued'
+        // Seller cancels — no fee, buyer gets full refund
+        cancellationReason = 'Cancelled by seller — full refund issued'
       }
     }
 

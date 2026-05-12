@@ -62,7 +62,7 @@ router.post('/:id/cancel', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Server error' })
   }
 })
-// GET /api/orders/incoming?storefront_id=:id ΓÇö seller sees orders for their listings
+// GET /api/orders/incoming?storefront_id=:id — seller sees orders for their listings
 router.get('/incoming', authMiddleware, async (req, res) => {
   const { storefront_id } = req.query
   if (!storefront_id) return res.status(400).json({ error: 'storefront_id required' })
@@ -114,7 +114,7 @@ router.get('/incoming', authMiddleware, async (req, res) => {
   }
 })
 
-// PUT /api/orders/:id/status ΓÇö seller updates order status
+// PUT /api/orders/:id/status — seller updates order status
 router.put('/:id/status', authMiddleware, async (req, res) => {
   const { status } = req.body
   const validStatuses = ['confirmed', 'shipped', 'fulfilled', 'cancelled']
@@ -143,7 +143,7 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
       req.params.id,
     ])
 
-    // If seller just confirmed ΓÇö notify buyer that cancellation is now blocked
+    // If seller just confirmed — notify buyer that cancellation is now blocked
     if (status === 'confirmed') {
       const { rows: sfRows } = await pool.query(
         `SELECT s.display_name
