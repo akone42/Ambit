@@ -72,21 +72,27 @@ router.post('/create-intent', authMiddleware, async (req, res) => {
   }
 
   try {
-    // Attach to Stripe Customer so the payment appears in their history
-    const customerId = await getOrCreateStripeCustomer(req.user.id)
-
     const intentParams = {
       amount: Math.round(amount),
       currency: 'usd',
-      customer: customerId,
+      automatic_payment_methods: { enabled: true },
     }
 
-    // If the user chose a saved card, wire it up
-    if (payment_method_id) {
-      intentParams.payment_method = payment_method_id
-      intentParams.confirm = false // frontend still confirms via stripe.js
-    } else {
-      intentParams.automatic_payment_methods = { enabled: true }
+    // Best-effort: attach a Stripe Customer so the payment appears in their
+    // history and saved cards work. If customer lookup/creation fails we still
+    // let the checkout proceed without a customer attached.
+    try {
+      const customerId = await getOrCreateStripeCustomer(req.user.id)
+      intentParams.customer = customerId
+
+      // If the user chose a saved card, wire it up
+      if (payment_method_id) {
+        intentParams.payment_method = payment_method_id
+        delete intentParams.automatic_payment_methods
+      }
+    } catch (customerErr) {
+      // eslint-disable-next-line no-console
+      console.warn('Could not attach Stripe customer (non-fatal):', customerErr.message)
     }
 
     const paymentIntent = await getStripe().paymentIntents.create(intentParams)
