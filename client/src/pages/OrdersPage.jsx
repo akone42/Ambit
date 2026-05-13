@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Order History page
  * Accessible to: any logged-in user (buyers and sellers)
  *
@@ -13,7 +13,7 @@ import PropTypes from 'prop-types'
 import api from '../lib/axios.js'
 import StarRating from '../components/StarRating.jsx'
 
-// ── Inline review form shown per order item ──────────────────────────────────
+// ΓöÇΓöÇ Inline review form shown per order item ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function ReviewForm({ listingId, listingTitle, onSubmitted }) {
   const [rating, setRating] = useState(0)
   const [body, setBody] = useState('')
@@ -55,7 +55,7 @@ function ReviewForm({ listingId, listingTitle, onSubmitted }) {
         disabled={submitting}
         className="bg-indigo-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
       >
-        {submitting ? 'Submitting…' : 'Submit review'}
+        {submitting ? 'SubmittingΓÇª' : 'Submit review'}
       </button>
     </form>
   )
@@ -71,6 +71,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [updatingOrderId, setUpdatingOrderId] = useState(null)
   // Track which items have just been reviewed this session
   const [reviewed, setReviewed] = useState(new Set())
 
@@ -87,7 +88,30 @@ export default function OrdersPage() {
       })
   }, [])
 
-  if (loading) return <div className="p-8 text-gray-400">Loading your orders…</div>
+  const canCancel = (order) => {
+    if (order.status === 'cancelled' || order.status === 'fulfilled') return false
+    if (order.order_type === 'product') return order.status === 'pending'
+    if (order.order_type === 'service') {
+      if (!order.requested_date) return true
+      return new Date(order.requested_date) > new Date()
+    }
+    return false
+  }
+
+  async function handleCancel(orderId) {
+    if (!window.confirm('Cancel this order?')) return
+    setUpdatingOrderId(orderId)
+    try {
+      const { data } = await api.post(`/orders/${orderId}/cancel`)
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? data.order : order)))
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not cancel order.')
+    } finally {
+      setUpdatingOrderId(null)
+    }
+  }
+
+  if (loading) return <div className="p-8 text-gray-400">Loading your ordersΓÇª</div>
   if (error) return <div className="p-8 text-red-500">{error}</div>
 
   const canReview = (order) => order.status === 'confirmed' || order.status === 'fulfilled'
@@ -169,6 +193,19 @@ export default function OrdersPage() {
                       </div>
                     )
                   })}
+                </div>
+              )}
+
+              {canCancel(order) && (
+                <div className="pt-3">
+                  <button
+                    type="button"
+                    onClick={() => handleCancel(order.id)}
+                    disabled={updatingOrderId === order.id}
+                    className="text-xs px-3 py-1.5 border border-red-200 text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {updatingOrderId === order.id ? 'CancellingΓÇª' : 'Cancel order'}
+                  </button>
                 </div>
               )}
             </div>
