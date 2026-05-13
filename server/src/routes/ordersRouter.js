@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/auth.js'
 import { createProductOrder, cancelOrder } from '../services/orderService.js'
 import { createServiceBooking } from '../services/bookingService.js'
 import { pool } from '../db/pool.js'
+import { sendOrderConfirmationToBuyer, sendOrderNotificationToSeller } from '../lib/email.js'
 
 const router = express.Router()
 
@@ -16,6 +17,13 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     const order = await createProductOrder(req.user.id, { shippingAddress, items })
     res.status(201).json({ order })
+
+    // ── Send emails after responding so the buyer isn't kept waiting ──
+    // We run these in the background (no await in the main flow).
+    sendEmailsForProductOrder(req.user.id, order).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error('Background email error (product order):', err.message)
+    })
   } catch (err) {
     if (err.status === 409) {
       return res.status(409).json({ error: 'Inventory conflict', conflicts: err.conflicts })
@@ -176,6 +184,70 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Server error' })
   }
 })
+
+// ---------------------------------------------------------------------------
+// sendEmailsForProductOrder  (internal helper — not a route)
+// ---------------------------------------------------------------------------
+// Queries the DB for everything needed to send confirmation emails, then
+// dispatches one email to the buyer and one per unique seller in the order.
+async function sendEmailsForProductOrder(buyerId, order) {
+  // Fetch buyer info
+  const { rows: buyerRows } = await pool.query(`SELECT email, username FROM users WHERE id = $1`, [
+    buyerId,
+  ])
+  const buyer = buyerRows[0]
+  if (!buyer) return
+
+  // Fetch order items joined with listing title + seller email
+  const { rows: items } = await pool.query(
+    `SELECT
+       oi.listing_id,
+       oi.quantity,
+       oi.price_at_purchase AS price,
+       l.title,
+       u.email AS seller_email,
+       u.username AS seller_username
+     FROM order_items oi
+     JOIN listings l ON l.id = oi.listing_id
+     JOIN storefronts s ON s.id = l.storefront_id
+     JOIN users u ON u.id = s.owner_id
+     WHERE oi.order_id = $1`,
+    [order.id]
+  )
+
+  if (!items.length) return
+
+  // Buyer email — all items in one email
+  await sendOrderConfirmationToBuyer({
+    to: buyer.email,
+    orderId: order.id,
+    total: order.total,
+    items,
+    type: 'product',
+  })
+
+  // Seller emails — group items by seller so each seller gets one email
+  const bySeller = {}
+  for (const item of items) {
+    if (!bySeller[item.seller_email]) {
+      bySeller[item.seller_email] = { email: item.seller_email, items: [] }
+    }
+    bySeller[item.seller_email].items.push(item)
+  }
+
+  for (const { email, items: sellerItems } of Object.values(bySeller)) {
+    const sellerTotal = sellerItems.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0)
+    await sendOrderNotificationToSeller({
+      to: email,
+      orderId: order.id,
+      total: sellerTotal,
+      items: sellerItems,
+      buyerUsername: buyer.username,
+      type: 'product',
+    })
+  }
+}
+
 // Returns all orders placed by the currently logged-in buyer.
 // Used by the buyer's order history page.
 router.get('/my', authMiddleware, async (req, res) => {

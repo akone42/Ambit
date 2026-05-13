@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -43,6 +43,21 @@ function CheckoutForm() {
   const [orderError, setOrderError] = useState('')
   const [isPlacing, setIsPlacing] = useState(false)
 
+  // Saved payment methods
+  const [savedMethods, setSavedMethods] = useState([])
+  const [selectedMethod, setSelectedMethod] = useState(null) // null = "new card"
+
+  useEffect(() => {
+    api
+      .get('/payments/methods')
+      .then((res) => {
+        setSavedMethods(res.data.methods)
+        // Auto-select first saved card if available
+        if (res.data.methods.length > 0) setSelectedMethod(res.data.methods[0].id)
+      })
+      .catch(() => {}) // if Stripe isn't configured just skip
+  }, [])
+
   const productItems = items.filter((i) => i.listing.type === 'product')
   const serviceItems = items.filter((i) => i.listing.type === 'service')
   const hasProducts = productItems.length > 0
@@ -79,19 +94,20 @@ function CheckoutForm() {
     setOrderError('')
 
     try {
-      // 1. Create Stripe PaymentIntent on the server
+      // 1. Create Stripe PaymentIntent — pass saved card ID if one is selected
       const { data } = await api.post('/payments/create-intent', {
         amount: Math.round(grandTotal * 100),
+        ...(selectedMethod ? { payment_method_id: selectedMethod } : {}),
       })
 
-      // 2. Confirm the card payment in the browser
+      // 2. Confirm the payment — use saved card or the new CardElement
+      const confirmParams = selectedMethod
+        ? { payment_method: selectedMethod } // saved card
+        : { payment_method: { card: elements.getElement(CardElement) } } // new card
+
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
         data.clientSecret,
-        {
-          payment_method: {
-            card: elements.getElement(CardElement),
-          },
-        }
+        confirmParams
       )
 
       if (stripeError) {
@@ -216,20 +232,73 @@ function CheckoutForm() {
           {/* Payment */}
           <section>
             <h2 className="text-base font-semibold text-gray-900 mb-4">Payment</h2>
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: '14px',
-                      color: '#111827',
-                      '::placeholder': { color: '#9ca3af' },
+
+            {/* Saved cards */}
+            {savedMethods.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {savedMethods.map((m) => (
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-3 border rounded-xl px-4 py-3 cursor-pointer transition-colors ${
+                      selectedMethod === m.id
+                        ? 'border-indigo-500 bg-indigo-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment_method"
+                      value={m.id}
+                      checked={selectedMethod === m.id}
+                      onChange={() => setSelectedMethod(m.id)}
+                      className="accent-indigo-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700 capitalize">{m.brand}</span>
+                    <span className="text-sm text-gray-500">•••• {m.last4}</span>
+                    <span className="text-xs text-gray-400 ml-auto">
+                      {m.exp_month}/{m.exp_year}
+                    </span>
+                  </label>
+                ))}
+
+                {/* Option to use a new card instead */}
+                <label
+                  className={`flex items-center gap-3 border rounded-xl px-4 py-3 cursor-pointer transition-colors ${
+                    selectedMethod === null
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value="new"
+                    checked={selectedMethod === null}
+                    onChange={() => setSelectedMethod(null)}
+                    className="accent-indigo-600"
+                  />
+                  <span className="text-sm text-gray-600">Use a new card</span>
+                </label>
+              </div>
+            )}
+
+            {/* New card input — shown when no saved card is selected */}
+            {selectedMethod === null && (
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <CardElement
+                  options={{
+                    style: {
+                      base: {
+                        fontSize: '14px',
+                        color: '#111827',
+                        '::placeholder': { color: '#9ca3af' },
+                      },
+                      invalid: { color: '#ef4444' },
                     },
-                    invalid: { color: '#ef4444' },
-                  },
-                }}
-              />
-            </div>
+                  }}
+                />
+              </div>
+            )}
           </section>
         </div>
 

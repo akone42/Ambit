@@ -33,6 +33,7 @@ import OrdersPage from './pages/OrdersPage.jsx'
 import ListingPage from './pages/ListingPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import OrderConfirmationPage from './pages/OrderConfirmationPage.jsx'
+import AccountPage from './pages/AccountPage.jsx'
 
 function NotFoundPage() {
   return <div className="p-8 text-gray-500">404 — Page not found</div>
@@ -83,6 +84,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <OrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <ProtectedRoute>
+                  <AccountPage />
                 </ProtectedRoute>
               }
             />

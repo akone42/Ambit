@@ -4,8 +4,8 @@
  * Displayed on every page. Shows different content based on auth state:
  *
  *   Not logged in:  Logo | [Login] [Register]
- *   Buyer:          Logo | Hello, frank | [Logout]
- *   Seller:         Logo | Hello, alice | [Dashboard] [Logout]
+ *   Buyer:          Logo | alice (→/account) | Sell | [cart] | Logout
+ *   Seller:         Logo | alice (→/account) | Dashboard | [cart] | Logout
  *
  * useAuth() gives us the current user — the Navbar re-renders automatically
  * whenever the user logs in or out because AuthContext state changed.
@@ -59,14 +59,15 @@ export default function Navbar() {
       <div className="flex items-center gap-2 sm:gap-4">
         {user ? (
           <>
-            <span className="hidden sm:inline text-sm text-gray-600">
-              Hello, <span className="font-medium">{user.username}</span>
-            </span>
-
-            <Link to="/orders" className="text-sm text-gray-600 hover:text-gray-900 font-medium">
-              Orders
+            {/* Clicking the username goes to the account page */}
+            <Link
+              to="/account"
+              className="hidden sm:inline text-sm text-gray-600 hover:text-indigo-600 font-medium transition-colors"
+            >
+              {user.display_name || user.username}
             </Link>
 
+            {/* Sellers see their dashboard; buyers see a prompt to start selling */}
             {user.role === 'seller' && (
               <Link
                 to="/dashboard"
@@ -75,7 +76,14 @@ export default function Navbar() {
                 Dashboard
               </Link>
             )}
-
+            {user.role === 'buyer' && (
+              <Link
+                to="/dashboard"
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                Sell
+              </Link>
+            )}
             {user.role === 'admin' && (
               <Link to="/admin" className="text-sm text-red-600 hover:text-red-800 font-medium">
                 Admin

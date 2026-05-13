@@ -20,8 +20,12 @@ const sql = `
     avatar_url VARCHAR(500),
     bio TEXT,
     saved_shipping_address JSONB,
+    stripe_customer_id VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
+
+  -- Add stripe_customer_id to existing deployments that ran the first migration
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(100);
 
   CREATE TABLE IF NOT EXISTS storefronts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

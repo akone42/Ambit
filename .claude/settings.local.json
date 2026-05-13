@@ -7,7 +7,14 @@
       "Bash(git pull *)",
       "Bash(git stash *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(npm install *)",
+      "Bash(tail -20 /private/tmp/claude-501/-Users-aloukone-Documents-GitHub-Ambit--claude-worktrees-gracious-cray-754731/426d5e22-dffe-4b62-ab4c-4d9fdd2ebc0d/tasks/bntxixoif.output 2>/dev/null || echo \"Server task output not found\")",
+      "Bash(lsof -ti:3001)",
+      "Bash(xargs kill -9)",
+      "Bash(lsof -ti:5173)",
+      "Bash(lsof -ti:5174)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp"
     ]
   }
 }
