@@ -2,7 +2,7 @@ services:
   - type: web
     name: ambit-server
     runtime: node
-    buildCommand: npm install
+    buildCommand: npm install && npm run migrate --workspace=server
     startCommand: node server/src/index.js
     envVars:
       - key: NODE_ENV
