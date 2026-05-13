@@ -107,6 +107,26 @@ const sql = `
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(listing_id, buyer_id)
   );
+
+  -- Cancellation and booking fields on orders (added in MCW merge)
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS booking_fee_charged BOOLEAN NOT NULL DEFAULT false;
+
+  -- Seller-configurable cancellation window on storefronts (added in MCW merge)
+  ALTER TABLE storefronts ADD COLUMN IF NOT EXISTS cancel_window_hours INTEGER NOT NULL DEFAULT 24;
+
+  -- Notifications table (added in MCW merge)
+  CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(60) NOT NULL,
+    title VARCHAR(120) NOT NULL,
+    body TEXT,
+    order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+    read BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
 `
 
 async function migrate() {
